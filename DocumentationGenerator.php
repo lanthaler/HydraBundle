@@ -76,11 +76,16 @@ class DocumentationGenerator
                 }
             }
         }
+        while (count($documentation['types2document']) > 0)
+        {
+            $type = array_pop($documentation['types2document']);
+            $this->documentType($documentation, $type);
+        }
+
+        unset($documentation['types2document']);
 
         return $documentation;
     }
-
-
 
     /**
      * Returns the ReflectionMethod for the given controller string.
@@ -127,6 +132,9 @@ class DocumentationGenerator
     {
         $doc = $this->getDocBlockText($method);
 
+        if (null !== $annotation->expect) {
+             $documentation['types2document'][] = $annotation->expect;
+        }
         $doc['expect'] = $annotation->expect;
         $doc['status_codes'] = $annotation->status_codes;
 
@@ -183,6 +191,133 @@ class DocumentationGenerator
         return array('title' => $parts[0], 'description' => $parts[1]);
     }
 
+    /**
+     * Documents a type
+     *
+     * @param  array  $documentation The documentation.
+     * @param  string $class         The type to document.
+     * @param  string $group         The serialization group to use.
+     */
+    protected function documentType(&$documentation, $class, $group = null)
+    {
+        if (self::isPrimitiveType($class)) {
+            return;
+        }
+
+        $idAnnot = 'ML\\HydraBundle\\Mapping\\Id';
+        $exposeAnnot = 'ML\\HydraBundle\\Mapping\\Expose';
+
+        $class = new \ReflectionClass($class);
+        $exposeClassAs = $class->getShortName();
+
+        if (null === ($annotation = $this->getAnnotation($class, $exposeAnnot))) {
+            // TODO Improve this
+            throw new \Exception($class->name . ' is directly or indirectly exposed but not annotated accordingly.');
+        } else {
+            if ($annotation->as) {
+                $exposeClassAs = $annotation->as;
+            }
+        }
+
+        if (isset($documentation['types'][$exposeClassAs])) {
+            if ($class->name !== $documentation['types'][$exposeClassAs]['class']) {
+                throw new \Exception(sprintf('The classes "%s" and "%s" have the same name (the namespace is ignored).',
+                    $class->name,
+                    $documentation['types'][$exposeClassAs]['class'])
+                );
+            }
+
+            return;
+        }
+
+        $result = array();
+        $result += $this->getDocBlockText($class);
+        $result['class'] = $class->name;
+        $result['properties'] = array();
+
+        if (null !== ($annotation = $this->getAnnotation($class, $idAnnot))) {
+            $variables = $annotation->variables;
+
+
+            // TODO Handle all other possibilities
+
+            $result['properties']['@id'] = array(
+                'element' => null,
+                'original_type' => null,
+                'type' => '@id',
+                'title' => 'The entity\'s IRI.',
+                'description' => '',
+                'route' => $annotation->route,   // TODO Need to check if GET allowed?
+                'readonly' => true,
+                'writeonly' => false
+            );
+
+            // TODO Check that the IRI template can be filled!?
+        }
+
+
+        $elements = array_merge($class->getProperties(), $class->getMethods());
+
+        foreach ($elements as $element) {
+            if (null === ($annotation = $this->getAnnotation($element, $exposeAnnot))) {
+                continue;
+            }
+
+            $definition = array();
+            $definition['element'] = $element->name;
+            $definition += $this->getType($element);
+
+            $exposeAs = $element->name;
+            if ($annotation->as) {
+                $exposeAs = $annotation->as;
+            }
+
+
+            $definition['readonly'] = $annotation->readonly;
+            $definition['writeonly'] = $annotation->writeonly;
+            $definition += $this->getDocBlockText($element);
+
+            if (isset($result['properties'][$exposeAs])) {
+                // TODO Improve this!
+                throw new \Exception(sprintf('Both "%s" and "%s" are being exposed as "%s" in class "%s"',
+                    $result['properties'][$exposeAs]['element'], $element->name, $exposeAs, $class->name));
+            }
+            $result['properties'][$exposeAs] = $definition;
+
+            // To avoid deep recursions
+            if ($definition['type'] && !static::isPrimitiveType($definition['type'])) {
+                 $documentation['types2document'][] = $definition['type'];
+            }
+            if (@$definition['array_type'] && !static::isPrimitiveType($definition['array_type'])) {
+                 $documentation['types2document'][] = $definition['array_type'];
+            }
+        }
+
+        $documentation['types'][$exposeClassAs] = $result;
+    }
+
+    /**
+     * Get the annotation of an element
+     *
+     * @param  \Reflector $element    The element whose annotation should be
+     *                                retrieved
+     * @param  string     $annotation The annotation class to retrieve
+     *
+     * @return object|null The annotation or null if the annotation doesn't
+     *                     exist on that object.
+     */
+    private function getAnnotation(\Reflector $element, $annotation)
+    {
+        if ($element instanceof \ReflectionClass) {
+            return $this->reader->getClassAnnotation($element, $annotation);
+        } elseif ($element instanceof \ReflectionMethod) {
+            return $this->reader->getMethodAnnotation($element, $annotation);
+        } elseif ($element instanceof \ReflectionProperty) {
+            return $this->reader->getPropertyAnnotation($element, $annotation);
+        }
+
+        return null;
+    }
 
     public function getType(\Reflector $element)
     {
@@ -253,5 +388,18 @@ class DocumentationGenerator
         }
 
         return null;
+    }
+
+    /**
+     * Checks whether the passed type is a primitive type
+     *
+     * @param  string  $type The type.
+     *
+     * @return boolean Return true if it is a primitive type, otherwise false.
+     */
+    private static function isPrimitiveType($type)
+    {
+        // TODO Remove HydraCollection to document it as soon as it exists
+        return in_array($type, array('array', 'string', 'float', 'double', 'boolean', 'bool', 'integer', '@id', 'HydraCollection', 'void'));
     }
 }
