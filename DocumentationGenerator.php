@@ -249,12 +249,14 @@ class DocumentationGenerator
                 'description' => '',
                 'route' => $annotation->route,   // TODO Need to check if GET allowed?
                 'readonly' => true,
-                'writeonly' => false
+                'writeonly' => false,
+                'operations' => array()
             );
 
             // TODO Check that the IRI template can be filled!?
         }
 
+        $this->documentOperations($class, $result, $documentation);
 
         $elements = array_merge($class->getProperties(), $class->getMethods());
 
@@ -277,6 +279,8 @@ class DocumentationGenerator
             $definition['writeonly'] = $annotation->writeonly;
             $definition += $this->getDocBlockText($element);
 
+            $this->documentOperations($element, $definition, $documentation);
+
             if (isset($result['properties'][$exposeAs])) {
                 // TODO Improve this!
                 throw new \Exception(sprintf('Both "%s" and "%s" are being exposed as "%s" in class "%s"',
@@ -294,6 +298,58 @@ class DocumentationGenerator
         }
 
         $documentation['types'][$exposeClassAs] = $result;
+    }
+
+    /**
+     * Document the operations associated to an element
+     *
+     * @param \Reflector $element  The element being documented.
+     * @param array $definition    The element's definition
+     * @param array $documentation The so far generated documentation.
+     */
+    private function documentOperations(\Reflector $element, &$definition, $documentation)
+    {
+        $operationsAnnot = 'ML\\HydraBundle\\Mapping\\Operations';
+        if (null !== ($operations = $this->getAnnotation($element, $operationsAnnot))) {
+            $operations = $operations->operations;
+
+            $expectedIriPattern = isset($definition['route'])
+                ? $documentation['routes'][$definition['route']]['iri']
+                : $documentation['routes'][$operations[0]]['iri'];
+
+            foreach ($operations as $operation) {
+                if ($documentation['routes'][$operation]['iri'] !== $expectedIriPattern) {
+                    if ($definition['route']) {
+                        throw new \Exception(sprintf('The operations (routes: %s) associated with "%s" in "%s" don\'t use the properties IRI pattern "%s".',
+                            implode(', ', $operations), $element->name, $class->name, $expectedIriPattern));
+                    }
+                    throw new \Exception(sprintf('The operations (routes: %s) associated with "%s" in "%s" don\'t use the same IRI pattern.',
+                            implode(', ', $operations), $element->name, $class->name));
+                }
+            }
+
+            if ($element instanceof \ReflectionClass) {
+                // TODO Check that the IRI template can be filled!?
+                if (false === isset($definition['route'])) {
+                    $definition['route'] = $operations[0];
+                }
+            } elseif ('HydraCollection' !== $definition['type']) {
+                if ('array' !== $definition['type']) {
+                    throw new \Exception(sprintf('"%s" in "%s" specifies operations but it\'s return type is "%s" instead of array or HydraCollection.',
+                        $element->name, $class->name, $definition['type']));
+                } else {
+                    $definition['type'] = '@id';
+                    // TODO Check that the IRI template can be filled!?
+                    if (false === isset($definition['route'])) {
+                        $definition['route'] = $operations[0];
+                    }
+                }
+            }
+        } else {
+            $operations = array();
+        }
+
+        $definition['operations'] = $operations;
     }
 
     /**
