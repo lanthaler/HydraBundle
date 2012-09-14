@@ -23,6 +23,8 @@ class DocumentationGenerator
 {
     const OPERATION_ANNOTATION = 'ML\\HydraBundle\\Mapping\\Operation';
 
+    const COLLECTION_ANNOTATION = 'ML\\HydraBundle\\Mapping\\Collection';
+
     /**
      * @var \Symfony\Component\DependencyInjection\ContainerInterface
      */
@@ -139,6 +141,18 @@ class DocumentationGenerator
         $doc['status_codes'] = $annotation->status_codes;
 
         $doc['return'] = $this->getType($method);
+
+
+        if (('array' === $doc['return']['type']) || ('HydraCollection' === $doc['return']['type'])) {
+            $doc['return']['type'] = 'HydraCollection';
+        }
+
+        if ($doc['return']['type'] && !static::isPrimitiveType($doc['return']['type'])) {
+                 $documentation['types2document'][] = $doc['return']['type'];
+        }
+        if (@$doc['return']['array_type'] && !static::isPrimitiveType($doc['return']['array_type'])) {
+             $documentation['types2document'][] = $doc['return']['array_type'];
+        }
 
         // method/IRI
         $doc['method'] = $route->getRequirement('_method') ?: 'ANY';
@@ -278,6 +292,28 @@ class DocumentationGenerator
             $definition['readonly'] = $annotation->readonly;
             $definition['writeonly'] = $annotation->writeonly;
             $definition += $this->getDocBlockText($element);
+
+            if (null !== ($collection = $this->getAnnotation($element, self::COLLECTION_ANNOTATION))) {
+                $collection = $collection->route;
+
+                if ('HydraCollection' !== $documentation['routes'][$collection]['return']['type']) {
+                    // TODO Improve this
+                    var_dump($documentation['routes'][$collection]);
+                    throw new \Exception(sprintf('"%s" in class "%s" is annotated as collection using the route "%s". The route, however, doesn\'t return a collection',
+                        $element->name, $class->name, $collection));
+                }
+
+                if ((null !== $definition['type']) && ('array' !== $definition['type'])) {
+                    // TODO Improve this
+                    throw new \Exception($element->name . ' is being converted to a collection, it\'s return value must therefore be an array');
+                }
+
+                $definition['type'] = 'HydraCollection';
+                $definition['array_type'] = $documentation['routes'][$collection]['return']['array_type'];
+                // TODO Check that the IRI template can be filled!?
+                $definition['route'] = $collection;
+            }
+            $definition['collection'] = $collection;
 
             $this->documentOperations($element, $definition, $documentation);
 
