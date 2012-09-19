@@ -218,6 +218,7 @@ class DocumentationGenerator
             return;
         }
 
+        $linkRelationAnnot = 'ML\\HydraBundle\\Mapping\\LinkRelation';
         $idAnnot = 'ML\\HydraBundle\\Mapping\\Id';
         $exposeAnnot = 'ML\\HydraBundle\\Mapping\\Expose';
 
@@ -272,6 +273,23 @@ class DocumentationGenerator
 
         $this->documentOperations($class, $result, $documentation);
 
+        $interfaces = $class->getInterfaces();
+        $linkRelationMethods = array();
+        foreach ($interfaces as $interface) {
+            if (null !== $this->getAnnotation($interface, $linkRelationAnnot)) {
+                if (false === isset($documentation['rels'][$interface->name])) {
+                    $documentation['rels'][$interface->name] = array();
+                    foreach ($interface->getMethods() as $method) {
+                        if ($method->isPublic()) {
+                            $documentation['rels'][$interface->name][$method->name] = $interface->name;
+                        }
+                    }
+                }
+
+                $linkRelationMethods += $documentation['rels'][$interface->name];
+            }
+        }
+
         $elements = array_merge($class->getProperties(), $class->getMethods());
 
         foreach ($elements as $element) {
@@ -316,6 +334,14 @@ class DocumentationGenerator
             $definition['collection'] = $collection;
 
             $this->documentOperations($element, $definition, $documentation);
+
+            if ($element instanceof \ReflectionMethod) {
+                if (array_key_exists($element->name, $linkRelationMethods)) {
+                    $definition['original_type'] .= ' --- ' . $linkRelationMethods[$element->name] . '::' . $element->name;
+                }
+            }
+
+            // TODO Validate definition
 
             if (isset($result['properties'][$exposeAs])) {
                 // TODO Improve this!
