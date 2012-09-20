@@ -364,6 +364,17 @@ class DocumentationGenerator
             }
         }
 
+        // TODO Do we really need this?
+        if (isset($result['properties'])) {
+            foreach ($result['properties'] as $property) {
+                if (isset($property['operations'])) {
+                    foreach ($property['operations'] as $operation) {
+                        $documentation['routes'][$operation]['used'] = 'yes';
+                    }
+                }
+            }
+        }
+
         $documentation['types'][$exposeClassAs] = $result;
     }
 
