@@ -304,6 +304,11 @@ class DocumentationGenerator
             $exposeAs = $element->name;
             if ($annotation->as) {
                 $exposeAs = $annotation->as;
+                $definition['iri_fragment'] = $exposeAs;
+            } else {
+                $exposeAs = $this->propertirize($exposeAs);
+                $definition['iri_fragment'] = $this->camelize($exposeAs);
+                $definition['iri_fragment'][0] = strtolower($definition['iri_fragment'][0]);
             }
 
 
@@ -519,5 +524,36 @@ class DocumentationGenerator
     {
         // TODO Remove HydraCollection to document it as soon as it exists
         return in_array($type, array('array', 'string', 'float', 'double', 'boolean', 'bool', 'integer', '@id', 'HydraCollection', 'void'));
+    }
+
+    /**
+     * Converts a method name to a property name.
+     *
+     * @param  string $string Some string.
+     *
+     * @return string The property name version of the string.
+     */
+    private function propertirize($string)
+    {
+        $string = preg_replace_callback('/([a-z0-9])([A-Z])/', function ($match) { return $match[1] . '_' . strtolower($match[2]); }, $string);
+
+        $prefix = substr($string, 0, strpos($string, '_'));
+        $string = ('get' === $prefix) ? substr($string, 4) : $string;
+
+        $suffix = substr($string, -4);
+
+        return ('_iri' === $suffix) ? substr($string, 0, -4) : $string;
+    }
+
+    /**
+     * Camelizes a given string.
+     *
+     * @param  string $string Some string.
+     *
+     * @return string The camelized version of the string.
+     */
+    private function camelize($string)
+    {
+        return preg_replace_callback('/(^|_|\.)+(.)/', function ($match) { return ('.' === $match[1] ? '_' : '').strtoupper($match[2]); }, $string);
     }
 }
