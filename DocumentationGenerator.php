@@ -252,7 +252,16 @@ class DocumentationGenerator
 
         if (null !== ($annotation = $this->getAnnotation($class, $idAnnot))) {
             $variables = $annotation->variables;
+            $routeVarGetters = array();
 
+            if (0 === count($variables)) {
+                if ($class->hasMethod('getId')) {
+                    $method = $class->getMethod('getId');
+                    if ($method->isPublic() && (0 === $method->getNumberOfRequiredParameters())) {
+                        $routeVarGetters['id'] = array('getId', true);
+                    }
+                }
+            }
 
             // TODO Handle all other possibilities
 
@@ -263,6 +272,7 @@ class DocumentationGenerator
                 'title' => 'The entity\'s IRI.',
                 'description' => '',
                 'route' => $annotation->route,   // TODO Need to check if GET allowed?
+                'route_variables' => $routeVarGetters,
                 'readonly' => true,
                 'writeonly' => false,
                 'operations' => array()
@@ -300,6 +310,7 @@ class DocumentationGenerator
             $definition = array();
             $definition['element'] = $element->name;
             $definition += $this->getType($element);
+            $definition += $this->getGetterSetter($class, $element);
 
             $exposeAs = $element->name;
             if ($annotation->as) {
@@ -522,6 +533,56 @@ class DocumentationGenerator
         }
 
         return null;
+    }
+
+    private function getGetterSetter(\ReflectionClass $class, \Reflector $element)
+    {
+        $definition = array();
+
+        if ($element instanceof \ReflectionProperty) {
+            if ($element->isPublic()) {
+                $definition['getter'] = $element->name;
+                $definition['getter_is_method'] = false;
+                $definition['setter'] = $element->name;
+                $definition['setter_method'] = false;
+            } else {
+                $camelProp = $this->camelize($element->name);
+                $methods = array(
+                    'get' . $camelProp,
+                    'is' . $camelProp,
+                    'has' . $camelProp
+                );
+
+                foreach ($methods as $method) {
+                    if (!$class->hasMethod($method)) {
+                        continue;
+                    }
+
+                    $refMethod = $class->getMethod($method);
+                    if (!$refMethod->isPublic() || (0 !== $refMethod->getNumberOfRequiredParameters())) {
+                        continue;
+                    }
+
+                    $definition['getter'] = $method;
+                    $definition['getter_is_method'] = true;
+                }
+
+                if (!isset($definition['getter'])) {
+                    throw new \Exception("No public getter method was found for {$class->name}::{$element->name}.");
+                }
+            }
+
+            // TODO Look for getter/setter
+        } else {
+            if (0 !== $element->getNumberOfRequiredParameters()) {
+                throw new \Exception("The method {$class->name}::{$element->name}() is public but has required parameters.");
+            } else {
+                $definition['getter'] = $element->name;
+                $definition['getter_is_method'] = true;
+            }
+        }
+
+        return $definition;
     }
 
     /**
