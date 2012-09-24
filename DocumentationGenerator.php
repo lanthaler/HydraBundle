@@ -386,6 +386,7 @@ class DocumentationGenerator
             }
         }
 
+        $documentation['class2type'][$class->name] = $exposeClassAs;
         $documentation['types'][$exposeClassAs] = $result;
     }
 
