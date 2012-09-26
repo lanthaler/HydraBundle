@@ -54,6 +54,15 @@ class DocumentationGenerator
         $this->reader    = $reader;
     }
 
+    public function isOperation(\ReflectionMethod $method)
+    {
+        if ($this->getAnnotation($method, self::OPERATION_ANNOTATION)) {
+            return true;
+        }
+
+        return false;
+    }
+
     /**
      * Gets the documentation
      *
