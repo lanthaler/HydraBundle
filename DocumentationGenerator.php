@@ -98,6 +98,102 @@ class DocumentationGenerator
         return $documentation;
     }
 
+    public function getVocabulary()
+    {
+        $documentation = $this->getDocumentation();
+
+        $vocab = array();
+        $vocabIri = $this->router->generate('hydra_vocab', array(), true) . '#';
+        $vocabPrefix = $vocabIri;
+
+        foreach ($documentation['types'] as $type => $definition) {
+            $vocab[] = array(
+                '@id' => $vocabPrefix . $type,
+                '@type' => 'rdfs:Class',
+                'short_name' => $type,
+                'label' => $definition['title'],
+                'description' => $definition['description'],
+                'operations' => $this->getOperations4Vocab($documentation, $definition['operations']),
+            );
+
+            foreach ($definition['properties'] as $name => $property) {
+                if ('@id' === $name) {
+                    continue;
+                }
+
+                $vocab[] = array(
+                    '@id' => $vocabPrefix . $property['iri_fragment'],
+                    '@type' => 'rdfs:Property',
+                    'short_name' => $name,
+                    'label' => $property['title'],
+                    'description' => $property['description'],
+                    'domain' => $vocabPrefix . $type,
+                    'range' => $property['type'],
+                    'readonly' => $property['readonly'],
+                    'writeonly' => $property['writeonly'],
+                    'operations' => $this->getOperations4Vocab($documentation, $property['operations'])
+                );
+            }
+        }
+
+        foreach ($documentation['routes'] as $name => $route) {
+            $vocab[] = array(
+                '@id' => '_:{{ name }}',
+                '@type' => 'hydra:Operation',
+                'method' => $route['method'],
+                'label' => $route['title'],
+                'description' => $route['description']
+            );
+        }
+
+
+        $vocab = array(
+            '@context' => array(
+                'vocab' => $vocabIri,
+                'hydra' => 'http://purl.org/hydra/core#',
+                'readonly' => 'hydra:readonly',
+                'operations' => 'hydra:operations',
+                'expects' => 'hydra:expects',
+                'returns' => 'hydra:returns',
+                'status_codes' => 'hydra:statusCodes',
+                'code' => 'hydra:statusCode',
+                'rdfs' => 'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
+                'label' => 'rdfs:label',
+                'description' => 'rdfs:comment',
+                'domain' => 'rdfs:domain',
+                'range' => 'rdfs:range',
+            ),
+            '@graph' => $vocab
+        );
+
+        return $vocab;
+    }
+
+    private function getOperations4Vocab($documentation, $operations)
+    {
+        $result = array();
+        foreach ($operations as $operation) {
+            $statusCodes = array();
+            foreach ($documentation['routes'][$operation]['status_codes'] as $code => $description) {
+                $statusCodes[] = array(
+                    'code' => $code,
+                    'description' => $description
+                );
+            }
+
+            $result[] = array(
+                '@id' => '_:' . $operation,
+                'method' => $documentation['routes'][$operation]['method'],
+                'description' => $documentation['routes'][$operation]['description'],
+                'expects' => $documentation['routes'][$operation]['expect'],
+                'returns' => $documentation['routes'][$operation]['return']['type'],
+                'status_codes' => $statusCodes
+            );
+        }
+
+        return $result;
+    }
+
     /**
      * Returns the ReflectionMethod for the given controller string.
      *
