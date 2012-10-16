@@ -1,0 +1,222 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Untitled Document</title>
+<style type="text/css">
+html {
+    font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-size: 13px;
+    line-height: 18px;
+    background-color: #F9F9F9;
+    color: #444444;
+}
+body {
+    padding: 20px;
+}
+h1, h2, h3 {
+    color: #333333;
+    text-rendering: optimizelegibility;
+}
+h1 {
+    font-size: 24px;
+    line-height: 30px;
+    border-bottom: 1px solid silver;
+    margin-bottom: 20px;
+}
+h2 {
+    font-size: 18px;
+    line-height: 27px;
+    border-bottom: 1px solid silver;
+    margin-bottom: 20px;
+}
+h3 {
+    color: #666666;
+    margin-bottom: 5px;
+    font-size: 14px;
+    line-height: 18px;
+}
+ul {
+    margin: 0;
+    padding: 0;
+}
+code, pre {
+    background-color: #F7F7F9;
+    border: 1px solid #E1E1E8;
+    border-radius: 3px;
+    color: #333333;
+    font-family: Menlo,Monaco,"Courier New",monospace;
+    padding: 2px 4px;
+}
+div.type {
+    background-color: #FFFFFF;
+    border: 1px solid #E0E0E0;
+    border-left: 10px solid #E0E0E0;
+    margin-bottom: 25px;
+    margin-left: 0;
+    padding: 10px 20px 0;
+}
+div.properties {
+    padding: 0 10px;
+}
+div.properties p {
+    margin-top: 0;
+}
+td, th {
+    text-align: left;
+    padding: 5px 0;
+    padding-right: 10px;
+    vertical-align: top;
+}
+table.properties code {
+    color: #DD1144;
+    font-size: 11px;
+}
+table.properties th.debug, table.properties td.debug {
+    padding-left: 20px;
+    color: #AAAAAA;
+}
+table.operations caption {
+    text-align: left;
+    padding: 10px 0 5px;
+    margin-bottom: 10px;
+    font-weight: bold;
+    font-size: 14px;
+    border-bottom: 1px solid silver;
+}
+table.operations th, table.operations td {
+    padding: 0 5px;;
+}
+</style>
+</head>
+<body>
+{% for type, definition in types %}
+<div class="type">
+    <h1>{{ definition.title }}</h1>
+    <p>{{ definition.description|nl2br }}</p>
+    <p>Class: <code>{{ definition.class }}</code></p>
+    <table class="properties">
+        <tbody>
+    {% for name, property in definition.properties %}
+    {% set operations = property.operations is defined and property.operations != null %}
+        <tr>
+            <th>{{ name }}</th>
+            <td>
+                <code>{{ property.type }}{% if property.array_type is defined %}&lt;{{ property.array_type}}&gt;{% endif %}</code>
+                {% if property.readonly %}<br /><em>read-only</em>{% endif %}{% if property.writeonly %}<br /><em>write-only</em>{% endif %}
+            </td>
+            <td>
+                {{ property.title }}
+                <p>{{ property.description }}</p>
+                {% if operations %}
+                <table class="operations">
+                    <caption>Operations</caption>
+                    <thead>
+                        <tr>
+                            <th>Method</th>
+                            <th>Description</th>
+                            <th>Expects</th>
+                            <th>Returns</th>
+                            <th>Operation name</th>
+                            <th class="debug">IRI template</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for operation in property.operations %}
+                        <tr>
+                            <td>{{ routes[operation].method }}</td>
+                            <td>{{ routes[operation].description }}</td>
+                            <td>{{ routes[operation].expect|default("n/a") }}</td>
+                            <td>{{ routes[operation].return.type|default("n/a") }}</td>
+                            <td>{{ operation }}</td>
+                            <td class="debug">{{ routes[operation].iri }}</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+                <br />
+                {% endif %}
+            </td>
+            <td class="debug">
+                Element: {{ property.element }}<br />
+                Original type: {{ property.original_type }}<br />
+                Type: {{ property.type }}<br />
+                Array type: {{ property.array_type|default("n/a")}}<br />
+                Route: {{ property.route|default("n/a") }}<br />
+            {% if property.route_variables is defined %}
+                Variables: {% for variable, element in property.route_variables %} {{ variable }} -> {{ element}}, {% endfor %}<br />
+            {% endif %}
+                Collection route: {{ property.collection_route|default("n/a") }}
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+    </table>
+    {% if definition.operations is defined and definition.operations != null %}
+    <table class="operations">
+        <caption>Operations</caption>
+        <thead>
+            <tr>
+                <th>Method</th>
+                <th>Description</th>
+                <th>Expects</th>
+                <th>Returns</th>
+                <th>Operation name</th>
+                <th class="debug">IRI template</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for operation in definition.operations %}
+            <tr>
+                <td>{{ routes[operation].method }}</td>
+                <td>{{ routes[operation].description }}</td>
+                <td>{{ routes[operation].expect|default("n/a") }}</td>
+                <td>{{ routes[operation].return.type|default("n/a") }}</td>
+                <td>{{ operation }}</td>
+                <td class="debug">{{ routes[operation].iri }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    <br />
+    {% endif %}
+</div>
+{% endfor %}
+
+<h1>Documented Routes</h1>
+<table class="route_properties">
+    <theader>
+        <tr>
+            <th>Name</th>
+            <th>IRI Pattern</th>
+            <th>Method</th>
+            <th>Description</th>
+            <th>Expect</th>
+            <th>Return</th>
+            <th>Status Codes</th>
+            <th>Used</th>
+        </tr>
+    </theader>
+    <tbody>
+{% for name, route in routes %}
+        <tr>
+            <td>{{ name }}</td>
+            <td>{{ route.iri }}</td>
+            <td>{{ route.method }}</td>
+            <td>{{ route.title }} {{ route.description }}</td>
+            <td>{{ route.expect }}</td>
+            <td>{{ route.return.type }}</td>
+            <td>{% if route.status_codes %}
+                <ul>
+                {% for code, description in route.status_codes %}
+                    <li>{{ code }}: {{ description }}</li>
+                {% endfor %}
+                </ul>
+            {% endif %}</td>
+            <td>{{ route.used|default("no") }}</td>
+        </tr>
+{% endfor %}
+    </tbody>
+</table>
+</body>
+</html>
