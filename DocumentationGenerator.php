@@ -184,6 +184,7 @@ class DocumentationGenerator
             $result[] = array(
                 '@id' => '_:' . $operation,
                 'method' => $documentation['routes'][$operation]['method'],
+                'label' => $documentation['routes'][$operation]['title'],
                 'description' => $documentation['routes'][$operation]['description'],
                 'expects' => $documentation['routes'][$operation]['expect'],
                 'returns' => $documentation['routes'][$operation]['return']['type'],
