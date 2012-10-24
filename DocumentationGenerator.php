@@ -103,8 +103,7 @@ class DocumentationGenerator
         $documentation = $this->getDocumentation();
 
         $vocab = array();
-        $vocabIri = $this->router->generate('hydra_vocab', array(), true) . '#';
-        $vocabPrefix = $vocabIri;
+        $vocabPrefix = $this->router->generate('hydra_vocab', array(), true) . '#';
 
         foreach ($documentation['types'] as $type => $definition) {
             $vocab[] = array(
@@ -113,7 +112,7 @@ class DocumentationGenerator
                 'short_name' => $type,
                 'label' => $definition['title'],
                 'description' => $definition['description'],
-                'operations' => $this->getOperations4Vocab($documentation, $definition['operations']),
+                'operations' => $this->getOperations4Vocab($documentation, $definition['operations'], $vocabPrefix),
             );
 
             foreach ($definition['properties'] as $name => $property) {
@@ -131,7 +130,7 @@ class DocumentationGenerator
                     'range' => $property['type'],
                     'readonly' => $property['readonly'],
                     'writeonly' => $property['writeonly'],
-                    'operations' => $this->getOperations4Vocab($documentation, $property['operations'])
+                    'operations' => $this->getOperations4Vocab($documentation, $property['operations'], $vocabPrefix)
                 );
             }
         }
@@ -149,7 +148,7 @@ class DocumentationGenerator
 
         $vocab = array(
             '@context' => array(
-                'vocab' => $vocabIri,
+                'vocab' => $vocabPrefix,
                 'hydra' => 'http://purl.org/hydra/core#',
                 'readonly' => 'hydra:readonly',
                 'operations' => 'hydra:operations',
@@ -169,7 +168,7 @@ class DocumentationGenerator
         return $vocab;
     }
 
-    private function getOperations4Vocab($documentation, $operations)
+    private function getOperations4Vocab($documentation, $operations, $vocabPrefix)
     {
         $result = array();
         foreach ($operations as $operation) {
@@ -181,13 +180,23 @@ class DocumentationGenerator
                 );
             }
 
+            $expects = $documentation['routes'][$operation]['expect'];
+            if ($expects && isset($documentation['class2type'][$expects])) {
+                $expects = $vocabPrefix . $documentation['class2type'][$expects];
+            }
+
+            $returns = $documentation['routes'][$operation]['return']['type'];
+            if ($returns && isset($documentation['class2type'][$returns])) {
+                $returns = $vocabPrefix . $documentation['class2type'][$returns];
+            }
+
             $result[] = array(
                 '@id' => '_:' . $operation,
                 'method' => $documentation['routes'][$operation]['method'],
                 'label' => $documentation['routes'][$operation]['title'],
                 'description' => $documentation['routes'][$operation]['description'],
-                'expects' => $documentation['routes'][$operation]['expect'],
-                'returns' => $documentation['routes'][$operation]['return']['type'],
+                'expects' => $expects,
+                'returns' => $returns,
                 'status_codes' => $statusCodes
             );
         }
