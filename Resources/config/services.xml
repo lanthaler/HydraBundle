@@ -19,7 +19,8 @@
         <service id="hydra.view.listener" class="%hydra.view.listener.class%">
             <tag name="kernel.event_listener" event="kernel.controller" method="onKernelController" />
             <tag name="kernel.event_listener" event="kernel.view" method="onKernelView" />
-            <argument type="service" id="service_container" />
+            <argument type="service" id="hydra.documentation_generator" />
+            <argument type="service" id="router" />
         </service>
     </services>
 

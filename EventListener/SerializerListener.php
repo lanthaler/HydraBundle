@@ -14,7 +14,8 @@ use Symfony\Component\HttpKernel\Event\GetResponseForControllerResultEvent;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Doctrine\Common\Util\ClassUtils;
-
+use ML\HydraBundle\DocumentationGenerator;
+use Symfony\Component\Routing\RouterInterface;
 use ML\HydraBundle\Serializer\Serializer;
 use ML\HydraBundle\Collection\Collection;
 
@@ -54,16 +55,13 @@ class SerializerListener
     /**
      * Constructor.
      *
-     * @param ContainerInterface $container The service container instance
+     * @param DocumentationGenerator $documentationGenerator The Hydra documentation generator
+     * @param RouterInterface $router The router
      */
-    public function __construct(ContainerInterface $container)
+    public function __construct(DocumentationGenerator $documentationGenerator, RouterInterface $router)
     {
-        //$this->container = $container;
-        $this->hydra = $container->get('hydra.documentation_generator');
-        $this->serializer = new Serializer(
-            $this->hydra->getDocumentation(),
-             $container->get('router')
-        );
+        $this->hydra = $documentationGenerator;
+        $this->serializer = new Serializer($this->hydra->getDocumentation(), $router);
     }
 
     /**
