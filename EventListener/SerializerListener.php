@@ -13,10 +13,9 @@ use Symfony\Component\HttpKernel\Event\FilterControllerEvent;
 use Symfony\Component\HttpKernel\Event\GetResponseForControllerResultEvent;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\Serializer\SerializerInterface;
 use Doctrine\Common\Util\ClassUtils;
 use ML\HydraBundle\DocumentationGenerator;
-use Symfony\Component\Routing\RouterInterface;
-use ML\HydraBundle\Serializer\Serializer;
 use ML\HydraBundle\Collection\Collection;
 
 /**
@@ -28,40 +27,26 @@ use ML\HydraBundle\Collection\Collection;
 class SerializerListener
 {
     /**
-     * @var Symfony\Component\DependencyInjection\ContainerInterface
-     */
-    //protected $container;
-
-    /**
-     * @var Symfony\Component\Routing\RouterInterface
-     */
-    //protected $router;
-
-    /**
      * @var ML\HydraBundle\DocumentationGenerator
      */
     protected $hydra;
 
     /**
-     * @var ML\HydraBundle\Serializer\Serializer
+     * @var Symfony\Component\Serializer\SerializerInterface
      */
     protected $serializer;
 
-    /**
-     * @var array
-     */
-    //protected $hydraDoc;
 
     /**
      * Constructor.
      *
      * @param DocumentationGenerator $documentationGenerator The Hydra documentation generator
-     * @param RouterInterface $router The router
+     * @param SerializerInterface $serializer The serializer
      */
-    public function __construct(DocumentationGenerator $documentationGenerator, RouterInterface $router)
+    public function __construct(DocumentationGenerator $documentationGenerator, SerializerInterface $serializer)
     {
         $this->hydra = $documentationGenerator;
-        $this->serializer = new Serializer($this->hydra->getDocumentation(), $router);
+        $this->serializer = $serializer;
     }
 
     /**

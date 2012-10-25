@@ -6,6 +6,7 @@
 
     <parameters>
         <parameter key="hydra.documentation_generator.class">ML\HydraBundle\DocumentationGenerator</parameter>
+        <parameter key="hydra.serializer.class">ML\HydraBundle\Serializer\Serializer</parameter>
         <parameter key="hydra.view.listener.class">ML\HydraBundle\EventListener\SerializerListener</parameter>
     </parameters>
 
@@ -16,11 +17,16 @@
             <argument type="service" id="annotation_reader" />
         </service>
 
+        <service id="hydra.serializer" class="%hydra.serializer.class%">
+            <argument type="service" id="hydra.documentation_generator" />
+            <argument type="service" id="router" />
+        </service>
+
         <service id="hydra.view.listener" class="%hydra.view.listener.class%">
             <tag name="kernel.event_listener" event="kernel.controller" method="onKernelController" />
             <tag name="kernel.event_listener" event="kernel.view" method="onKernelView" />
             <argument type="service" id="hydra.documentation_generator" />
-            <argument type="service" id="router" />
+            <argument type="service" id="hydra.serializer" />
         </service>
     </services>
 

@@ -11,8 +11,10 @@ namespace ML\HydraBundle\Serializer;
 
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\Form\Util\PropertyPath;
+use Symfony\Component\Routing\RouterInterface;
 use ML\JsonLD\JsonLD;
 use Doctrine\Common\Util\ClassUtils;
+use ML\HydraBundle\DocumentationGenerator;
 
 
 /**
@@ -29,11 +31,11 @@ class Serializer implements SerializerInterface
     protected $routes;
     protected $router;
 
-    public function __construct($documentation, $router)
+    public function __construct(DocumentationGenerator $documentationGenerator, RouterInterface $router)
     {
-        $this->docu = $documentation;
-        $this->types = $documentation['types'];  // TODO Remove this!?
-        $this->routes = $documentation['routes'];  // TODO Remove this!?
+        $this->docu = $documentationGenerator->getDocumentation();
+        $this->types = $this->docu['types'];  // TODO Remove this!?
+        $this->routes = $this->docu['routes'];  // TODO Remove this!?
         $this->router = $router;
     }
 
