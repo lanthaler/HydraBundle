@@ -12,6 +12,8 @@ namespace ML\HydraBundle\Serializer;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\Form\Util\PropertyPath;
 use Symfony\Component\Routing\RouterInterface;
+use Symfony\Component\Serializer\Exception\RuntimeException;
+use Symfony\Component\Serializer\Exception\UnexpectedValueException;
 use ML\JsonLD\JsonLD;
 use Doctrine\Common\Util\ClassUtils;
 use ML\HydraBundle\DocumentationGenerator;
@@ -34,8 +36,6 @@ class Serializer implements SerializerInterface
     public function __construct(DocumentationGenerator $documentationGenerator, RouterInterface $router)
     {
         $this->docu = $documentationGenerator->getDocumentation();
-        $this->types = $this->docu['types'];  // TODO Remove this!?
-        $this->routes = $this->docu['routes'];  // TODO Remove this!?
         $this->router = $router;
     }
 
@@ -44,10 +44,15 @@ class Serializer implements SerializerInterface
      *
      * @param mixed  $data   any data
      * @param string $format format name
+     *
      * @return string
      */
     public function serialize($data, $format)
     {
+        if ('jsonld' !== $format) {
+            throw new UnexpectedValueException('Serialization for the format ' . $format . ' is not supported');
+        }
+
         // TODO Allow scalars to be serialized directly?
         if (false === is_object($data)) {
             throw new \Exception('Only objects can be serialized');
@@ -56,7 +61,7 @@ class Serializer implements SerializerInterface
         // TODO Fix this to support Doctrine collections
         $type = get_class($data);
 
-        return JsonLD::toString($this->doSerializeNew($data, true), true);
+        return JsonLD::toString($this->doSerialize($data, true), true);
     }
 
     /**
@@ -65,116 +70,135 @@ class Serializer implements SerializerInterface
      * @param mixed  $data
      * @param string $type
      * @param string $format
+     *
      * @return object
      */
     public function deserialize($data, $type, $format)
     {
+        if ('jsonld' !== $format) {
+            throw new UnexpectedValueException('Deserialization for the format ' . $format . ' is not supported');
+        }
 
+        $reflectionClass = new \ReflectionClass($type);
+
+        if (null !== ($constructor = $reflectionClass->getConstructor())) {
+            if (0 !== $constructor->getNumberOfRequiredParameters()) {
+                throw new RuntimeException(
+                    'Cannot create an instance of '. $type .
+                    ' from serialized data because its constructor has required parameters.'
+                );
+            }
+        }
+
+        if (!isset($this->docu['class2type'][$type])) {
+            throw new RuntimeException(
+                'Cannot deserialize the data into '. $type .
+                ' as it is not documented by Hydra.'
+            );
+        }
+
+        $vocabBase = $this->router->generate('hydra_vocab', array(), true) . '#';
+        $typeName = $this->docu['class2type'][$type];
+        $typeIri = $vocabBase . $typeName;
+
+        $document = JsonLD::getDocument($data);
+
+        $node = $document->getNodesByType($typeIri);
+
+        if (1 !== count($node)) {
+            throw new RuntimeException(
+                'The passed data contains '. count($node) . ' nodes of the type ' .
+                $type . '; expected 1.'
+            );
+        }
+
+        $node = $node[0];
+
+        $object = new $type;
+
+        foreach ($this->docu['types'][$typeName]['properties'] as $property => $definition) {
+            if ($definition['readonly']) {
+                continue;
+            }
+
+            // TODO Parse route!
+            if (isset($definition['route'])) {
+                continue;   // FIXME Remove this
+
+                $reqVariables = $this->docu['routes'][$definition['route']]['variables'];
+                $parameters = $this->docu['routes'][$definition['route']]['defaults'];
+
+                if (isset($definition['route_variables'])) {
+                    foreach ($definition['route_variables'] as $var => $def) {
+                        if ($def[1]) { // is method?
+                            $parameters[$var] = $data->{$def[0]}();
+                        } else {
+                            $parameters[$var] = $data->{$def[0]};
+                        }
+                    }
+                } else {
+                    $value = $this->getValue($data, $definition);
+                    if (is_array($value)) {
+                        $parameters += $value;
+                    } elseif (is_scalar($value) && (1 === count($reqVariables))) {
+                        $parameters[$reqVariables[0]] = $value;
+                    }
+                }
+
+                // TODO Remove this hack
+                if (in_array('id', $reqVariables) && !isset($parameters['id']) && is_callable(array($data, 'getId'))) {
+                    $parameters['id'] = $data->getId();
+                }
+
+                $route =  $this->router->generate($definition['route'], $parameters);
+
+                if ('HydraCollection' === $definition['type']) {
+                    $result[$property] = array(
+                        '@id' => $route,
+                        '@type' => 'hydra:Collection'
+                    );
+                } else {
+                    $result[$property] = $route;
+                }
+
+                // Add @type after @id
+                if ('@id' === $property) {
+                    $result['@type'] = $type;
+                }
+
+                continue;
+            }
+
+            // TODO Recurse!?
+
+            $propertyPath = new PropertyPath($definition['element']);
+            $propertyPath->setValue($object, $node->getProperty($vocabBase . $definition['iri_fragment']));
+
+            //$this->setValue($data, $definition, $node->getProperty($vocabBase . $definition['iri_fragment']));
+
+            // if (is_array($value) || ($value instanceof \ArrayAccess) || ($value instanceof \Travesable)) {
+            //     $result[$property] = array();
+            //     foreach ($value as $val) {
+            //         $result[$property][] = $this->doSerialize($val);
+            //     }
+            // } else {
+            //     $result[$property] = $value;
+            // }
+        }
+
+        return $object;
     }
 
     /**
      * Serializes data
      *
      * @param mixed  $data        The data to serialize.
-     * @param string $type        The datatype to use.
      * @param bool   $asReference Serialize as reference (instead of embed).
      * @param array  $include     Which subtrees should be included?
      *
      * @return mixed The serialized data.
      */
-    private function doSerialize($data, $type, $asReference = false, array $include = array())
-    {
-        $type = $this->docu['class2type'][$type];
-
-        if (false === isset($this->types[$type])) {
-            throw new \Exception($type . ' is not documented.');
-        }
-
-        $result = new \stdClass();
-
-        if ($asReference && array_key_exists('@id', $this->types[$type]['properties'])) {
-            $element = $this->types[$type]['properties']['@id']['element'];
-            $id = new PropertyPath($element);
-            $result->{'@id'} = $this->router->generate(
-                $this->types[$type]['properties']['@id']['route'],
-                array($element => $id->getValue($data)),
-                true
-            );
-
-            return $result;
-        }
-
-        $result->{'@context'} = $type;
-
-        foreach ($this->types[$type]['properties'] as $key => $definition) {
-            $subtreeAsReference = !in_array($key, $include);
-            $subtreeIncludes = array();
-            if ($subtreeAsReference && array_key_exists($definition['element'], $include)) {
-                $subtreeAsReference = false;
-                $subtreeIncludes = $include[$definition['element']];
-            }
-
-            $propertyPath = $definition['element'];
-
-            // TODO Look for a way to avoid this hack!
-            if ('get' === substr($propertyPath, 0, 3)) {
-                $propertyPath = substr($propertyPath, 3);
-            }
-            $propertyPath = new PropertyPath($propertyPath);
-
-            $value = $propertyPath->getValue($data);
-
-            if (is_array($value) || ($value instanceof \Travesable) || ($value instanceof \IteratorAggregate)) {
-                if (isset($definition['route'])) {
-                    // the value is an array of IRI template variables
-                    $result->$key = new \stdClass();
-                    $result->$key->{'@id'} = $this->router->generate(
-                        $definition['route'],
-                        $value,
-                        true
-                    );
-                } else {
-                    $serializedItems = array();
-                    foreach ($value as $item) {
-
-                        $serializedItems[] = $this->doSerialize(
-                            $value,
-                            isset($definition['array_type']) ? $definition['array_type'] : null,
-                            $subtreeAsReference,
-                            $subtreeIncludes
-                        );
-                    }
-                    $result->$key = $serializedItems;
-                }
-            } elseif (is_object($value)) {
-                $result->$key = $this->doSerialize($value, $definition['type'], $subtreeAsReference, $subtreeIncludes);
-            } else {
-                if (isset($definition['route'])) {
-                    $result->$key = $this->router->generate(
-                        $definition['route'],
-                        array($definition['element'] => $value),
-                        true
-                    );
-                } else {
-                    $result->$key = $value;
-                }
-            }
-        }
-
-        return $result;
-    }
-
-
-    /**
-     * Serializes data NEW
-     *
-     * @param mixed  $data        The data to serialize.
-     * @param bool   $asReference Serialize as reference (instead of embed).
-     * @param array  $include     Which subtrees should be included?
-     *
-     * @return mixed The serialized data.
-     */
-    private function doSerializeNew($data, $include = false)
+    private function doSerialize($data, $include = false)
     {
         // TODO Need to handle cycles!
 
@@ -258,7 +282,7 @@ class Serializer implements SerializerInterface
                 if (is_array($value) || ($value instanceof \ArrayAccess) || ($value instanceof \Travesable)) {
                     $result[$property] = array();
                     foreach ($value as $val) {
-                        $result[$property][] = $this->doSerializeNew($val);
+                        $result[$property][] = $this->doSerialize($val);
                     }
                 } else {
                     $result[$property] = $value;
@@ -317,5 +341,16 @@ class Serializer implements SerializerInterface
         }
 
         return null;
+    }
+
+    private function setValue($object, $definition, $value)
+    {
+        if (isset($definition['setter'])) {
+            if ($definition['setter_is_method']) {
+                $object->{$definition['setter']}($value);
+            } else {
+                $object->{$definition['getter']} = $value;
+            }
+        }
     }
 }
