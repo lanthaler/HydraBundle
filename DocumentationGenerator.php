@@ -135,17 +135,6 @@ class DocumentationGenerator
             }
         }
 
-        foreach ($documentation['routes'] as $name => $route) {
-            $vocab[] = array(
-                '@id' => '_:{{ name }}',
-                '@type' => 'hydra:Operation',
-                'method' => $route['method'],
-                'label' => $route['title'],
-                'description' => $route['description']
-            );
-        }
-
-
         $vocab = array(
             '@context' => array(
                 'vocab' => $vocabPrefix,
