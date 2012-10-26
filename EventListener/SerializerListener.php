@@ -12,9 +12,9 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpKernel\Event\FilterControllerEvent;
 use Symfony\Component\HttpKernel\Event\GetResponseForControllerResultEvent;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Serializer\SerializerInterface;
 use Doctrine\Common\Util\ClassUtils;
+use ML\HydraBundle\JsonLdResponse;
 use ML\HydraBundle\DocumentationGenerator;
 use ML\HydraBundle\Collection\Collection;
 
@@ -94,6 +94,9 @@ class SerializerListener
 
         if (is_array($result) || ($result instanceof \ArrayAccess) || ($result instanceof \Traversable)) {
             $result = new Collection($request->getUri(), $result);
+        } elseif (null === $result) {
+            $event->setResponse(new JsonLdResponse('', 200));
+            return;
         } elseif (!is_object($result)) {
             throw new \Exception("A Hydra controller must return either an array or an object, got a(n) " . gettype($result));
         }
@@ -111,6 +114,6 @@ if ($request->query->get('debug', false)) {
 //var_dump($this->hydraDoc['types'][$className]);
 die();
 
-        $event->setResponse(new JsonResponse($serialized));
+        $event->setResponse(new JsonLdResponse($serialized));
     }
 }
