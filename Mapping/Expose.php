@@ -21,6 +21,11 @@ class Expose
     public $as = null;
 
     /**
+     * @var string
+     */
+    public $iri = null;
+
+    /**
      * @var bool
      */
     public $readonly = false;

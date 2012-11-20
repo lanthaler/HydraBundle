@@ -74,8 +74,13 @@ class DocumentationGeneratorController extends Controller
 
         $context = array();
         $context['vocab'] = $this->generateUrl('hydra_vocab', array(), true) . '#';
-        $context['hydra'] = 'http://purl.org/hydra/vocab#';
-        $context[$type] = 'vocab:' . $type;
+        $context['hydra'] = 'http://purl.org/hydra/core#';
+
+        if ($documentation['types'][$type]['iri']) {
+            $context[$type] = $documentation['types'][$type]['iri'];
+        } else {
+            $context[$type] = 'vocab:' . $type;
+        }
 
         $ranges = array();
 
@@ -83,7 +88,9 @@ class DocumentationGeneratorController extends Controller
             if ('@id' === $def['type']) {
                 $context[$property] = array('@id' => 'vocab:' . $property, '@type' => '@id');
             } else {
-                $context[$property] = 'vocab:' . $def['iri_fragment'];
+                $context[$property] = (false === strpos($def['iri'], ':'))
+                    ? 'vocab:' . $def['iri']
+                    : $def['iri'];
 
                 // if (isset($documentation['class2type'][$def['type']])) {
                 //     $ranges[$documentation['class2type'][$def['type']]] = true;

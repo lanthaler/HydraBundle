@@ -10,7 +10,7 @@ use ML\HydraBundle\Mapping as Hydra;
  * A generic collection which does nothing else than keeping references to
  * a number of resources.
  *
- * @Hydra\Expose()
+ * @Hydra\Expose(iri="http://purl.org/hydra/core#Collection")
  */
 class Collection
 {
@@ -24,7 +24,7 @@ class Collection
     /**
      * @var array The members of this collection.
      *
-     * @Hydra\Expose()
+     * @Hydra\Expose(iri="http://www.w3.org/2000/01/rdf-schema#member")
      */
     private $members;
 

@@ -107,7 +107,7 @@ class DocumentationGenerator
 
         foreach ($documentation['types'] as $type => $definition) {
             $vocab[] = array(
-                '@id' => $vocabPrefix . $type,
+                '@id' => ($definition['iri']) ? $definition['iri'] : $vocabPrefix . $type,  // TODO Handle relative IRIs!?
                 '@type' => 'rdfs:Class',
                 'short_name' => $type,
                 'label' => $definition['title'],
@@ -121,12 +121,12 @@ class DocumentationGenerator
                 }
 
                 $vocab[] = array(
-                    '@id' => $vocabPrefix . $property['iri_fragment'],
+                    '@id' => (false === strpos($property['iri'], ':')) ? $vocabPrefix . $property['iri'] : $property['iri'],   // TODO Check this
                     '@type' => 'rdfs:Property',
                     'short_name' => $name,
                     'label' => $property['title'],
                     'description' => $property['description'],
-                    'domain' => $vocabPrefix . $type,
+                    'domain' => ($definition['iri']) ? $definition['iri'] : $vocabPrefix . $type,  // TODO Handle relative IRIs!?
                     'range' => $property['type'],
                     'readonly' => $property['readonly'],
                     'writeonly' => $property['writeonly'],
@@ -171,12 +171,17 @@ class DocumentationGenerator
 
             $expects = $documentation['routes'][$operation]['expect'];
             if ($expects && isset($documentation['class2type'][$expects])) {
-                $expects = $vocabPrefix . $documentation['class2type'][$expects];
+                  // TODO Handle relative IRIs!?
+                $expects = ($documentation['types'][$documentation['class2type'][$expects]]['iri'])
+                    ? $documentation['types'][$documentation['class2type'][$expects]]['iri']
+                    : $vocabPrefix . $documentation['class2type'][$expects];
             }
 
             $returns = $documentation['routes'][$operation]['return']['type'];
             if ($returns && isset($documentation['class2type'][$returns])) {
-                $returns = $vocabPrefix . $documentation['class2type'][$returns];
+                $returns = ($documentation['types'][$documentation['class2type'][$returns]]['iri'])
+                    ? $documentation['types'][$documentation['class2type'][$returns]]['iri']
+                    : $vocabPrefix . $documentation['class2type'][$returns];
             }
 
             $result[] = array(
@@ -351,6 +356,7 @@ class DocumentationGenerator
 
         $result = array();
         $result += $this->getDocBlockText($class);
+        $result['iri'] = $annotation->iri;
         $result['class'] = $class->name;
         $result['properties'] = array();
 
@@ -419,11 +425,21 @@ class DocumentationGenerator
             $exposeAs = $element->name;
             if ($annotation->as) {
                 $exposeAs = $annotation->as;
-                $definition['iri_fragment'] = $exposeAs;
+
+                if ($annotation->iri) {
+                    $definition['iri'] = $annotation->iri;
+                } else {
+                    $definition['iri'] = $exposeAs;
+                }
             } else {
                 $exposeAs = $this->propertirize($exposeAs);
-                $definition['iri_fragment'] = $this->camelize($exposeAs);
-                $definition['iri_fragment'][0] = strtolower($definition['iri_fragment'][0]);
+
+                if ($annotation->iri) {
+                    $definition['iri'] = $annotation->iri;
+                } else {
+                    $definition['iri'] = $this->camelize($exposeAs);
+                    $definition['iri'][0] = strtolower($definition['iri'][0]);
+                }
             }
 
 
