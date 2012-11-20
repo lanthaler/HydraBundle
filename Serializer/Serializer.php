@@ -260,8 +260,7 @@ class Serializer implements SerializerInterface
 
                     if ('HydraCollection' === $definition['type']) {
                         $result[$property] = array(
-                            '@id' => $route,
-                            '@type' => 'hydra:Collection'
+                            '@id' => $route
                         );
                     } else {
                         $result[$property] = $route;
