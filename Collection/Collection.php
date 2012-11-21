@@ -5,10 +5,7 @@ namespace ML\HydraBundle\Collection;
 use ML\HydraBundle\Mapping as Hydra;
 
 /**
- * Collection
- *
- * A generic collection which does nothing else than keeping references to
- * a number of resources.
+ * A generic collection keeping references to a number of resources.
  *
  * @Hydra\Expose(iri="http://purl.org/hydra/core#Collection")
  */
