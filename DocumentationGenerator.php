@@ -198,6 +198,50 @@ class DocumentationGenerator
         return $result;
     }
 
+    public function getContext($type)
+    {
+        $documentation = $this->getDocumentation();
+
+        if (!isset($documentation['types'][$type])) {
+            return null;
+        }
+
+        $properties = $documentation['types'][$type]['properties'];
+        unset($properties['@id']);
+
+        $context = array();
+        $context['vocab'] = $this->router->generate('hydra_vocab', array(), true) . '#';
+        $context['hydra'] = 'http://purl.org/hydra/core#';
+
+        if ($documentation['types'][$type]['iri']) {
+            $context[$type] = $documentation['types'][$type]['iri'];
+        } else {
+            $context[$type] = 'vocab:' . $type;
+        }
+
+        $ranges = array();
+
+        foreach ($properties as $property => $def) {
+            if ('@id' === $def['type']) {
+                $context[$property] = array('@id' => 'vocab:' . $property, '@type' => '@id');
+            } else {
+                $context[$property] = (false === strpos($def['iri'], ':'))
+                    ? 'vocab:' . $def['iri']
+                    : $def['iri'];
+
+                // if (isset($documentation['class2type'][$def['type']])) {
+                //     $ranges[$documentation['class2type'][$def['type']]] = true;
+                // }
+            }
+        }
+
+        // foreach ($ranges as $type => $def) {
+        //     $context[$property] = 'vocab:' . $type;
+        // }
+
+        return array('@context' => $context);
+    }
+
     /**
      * Returns the ReflectionMethod for the given controller string.
      *

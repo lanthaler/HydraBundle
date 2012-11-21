@@ -67,41 +67,12 @@ class DocumentationGeneratorController extends Controller
      */
     public function getContextAction($type)
     {
-        $documentation = $this->get('hydra.documentation_generator')->getDocumentation();
+        $context = $this->get('hydra.documentation_generator')->getContext($type);
 
-        $properties = $documentation['types'][$type]['properties'];
-        unset($properties['@id']);
-
-        $context = array();
-        $context['vocab'] = $this->generateUrl('hydra_vocab', array(), true) . '#';
-        $context['hydra'] = 'http://purl.org/hydra/core#';
-
-        if ($documentation['types'][$type]['iri']) {
-            $context[$type] = $documentation['types'][$type]['iri'];
-        } else {
-            $context[$type] = 'vocab:' . $type;
+        if (null === $context) {
+            $this->createNotFoundException();
         }
 
-        $ranges = array();
-
-        foreach ($properties as $property => $def) {
-            if ('@id' === $def['type']) {
-                $context[$property] = array('@id' => 'vocab:' . $property, '@type' => '@id');
-            } else {
-                $context[$property] = (false === strpos($def['iri'], ':'))
-                    ? 'vocab:' . $def['iri']
-                    : $def['iri'];
-
-                // if (isset($documentation['class2type'][$def['type']])) {
-                //     $ranges[$documentation['class2type'][$def['type']]] = true;
-                // }
-            }
-        }
-
-        // foreach ($ranges as $type => $def) {
-        //     $context[$property] = 'vocab:' . $type;
-        // }
-
-        return new JsonLdResponse(array('@context' => $context));
+        return new JsonLdResponse($context);
     }
 }
