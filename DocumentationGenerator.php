@@ -25,6 +25,19 @@ class DocumentationGenerator
 
     const COLLECTION_ANNOTATION = 'ML\\HydraBundle\\Mapping\\Collection';
 
+    const HYDRA_COLLECTION = 'ML\\HydraBundle\\Collection\\Collection';
+
+    private static $typeMap = array(
+        'string' => 'http://www.w3.org/2001/XMLSchema#string',
+        'integer' => 'http://www.w3.org/2001/XMLSchema#integer',
+        'float' => 'http://www.w3.org/2001/XMLSchema#double',
+        'double' => 'http://www.w3.org/2001/XMLSchema#double',
+        'boolean' => 'http://www.w3.org/2001/XMLSchema#boolean',
+        'bool' => 'http://www.w3.org/2001/XMLSchema#boolean',
+        '@id' => 'http://www.w3.org/2000/01/rdf-schema#Resource',
+        'void' => 'http://www.w3.org/2002/07/owl#Nothing'
+    );
+
     /**
      * @var \Symfony\Component\DependencyInjection\ContainerInterface
      */
@@ -107,7 +120,7 @@ class DocumentationGenerator
 
         foreach ($documentation['types'] as $type => $definition) {
             $vocab[] = array(
-                '@id' => ($definition['iri']) ? $definition['iri'] : $vocabPrefix . $type,  // TODO Handle relative IRIs!?
+                '@id' => $this->getElementIri($vocabPrefix, $definition['iri']),
                 '@type' => 'rdfs:Class',
                 'short_name' => $type,
                 'label' => $definition['title'],
@@ -121,13 +134,13 @@ class DocumentationGenerator
                 }
 
                 $vocab[] = array(
-                    '@id' => (false === strpos($property['iri'], ':')) ? $vocabPrefix . $property['iri'] : $property['iri'],   // TODO Check this
+                    '@id' => $this->getElementIri($vocabPrefix, $property['iri']),   // TODO Check this
                     '@type' => 'rdfs:Property',
                     'short_name' => $name,
                     'label' => $property['title'],
                     'description' => $property['description'],
-                    'domain' => ($definition['iri']) ? $definition['iri'] : $vocabPrefix . $type,  // TODO Handle relative IRIs!?
-                    'range' => $property['type'],
+                    'domain' => $this->getElementIri($vocabPrefix, $definition['iri']),
+                    'range' => $this->getRangeIri($vocabPrefix, $property['type'], $property['array_type']),
                     'readonly' => $property['readonly'],
                     'writeonly' => $property['writeonly'],
                     'operations' => $this->getOperations4Vocab($documentation, $property['operations'], $vocabPrefix)
@@ -140,16 +153,17 @@ class DocumentationGenerator
                 'vocab' => $vocabPrefix,
                 'hydra' => 'http://purl.org/hydra/core#',
                 'readonly' => 'hydra:readonly',
+                'writeonly' => 'hydra:writeonly',
                 'operations' => 'hydra:operations',
-                'expects' => 'hydra:expects',
-                'returns' => 'hydra:returns',
+                'expects' =>  array('@id' => 'hydra:expects', '@type' => '@id'),
+                'returns' =>  array('@id' => 'hydra:returns', '@type' => '@id'),
                 'status_codes' => 'hydra:statusCodes',
                 'code' => 'hydra:statusCode',
                 'rdfs' => 'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
                 'label' => 'rdfs:label',
                 'description' => 'rdfs:comment',
-                'domain' => 'rdfs:domain',
-                'range' => 'rdfs:range',
+                'domain' => array('@id' => 'rdfs:domain', '@type' => '@id'),
+                'range' =>  array('@id' => 'rdfs:range', '@type' => '@id'),
             ),
             '@graph' => $vocab
         );
@@ -172,16 +186,12 @@ class DocumentationGenerator
             $expects = $documentation['routes'][$operation]['expect'];
             if ($expects && isset($documentation['class2type'][$expects])) {
                   // TODO Handle relative IRIs!?
-                $expects = ($documentation['types'][$documentation['class2type'][$expects]]['iri'])
-                    ? $documentation['types'][$documentation['class2type'][$expects]]['iri']
-                    : $vocabPrefix . $documentation['class2type'][$expects];
+                $expects = $this->getElementIri($vocabPrefix, $documentation['types'][$documentation['class2type'][$expects]]['iri']);
             }
 
             $returns = $documentation['routes'][$operation]['return']['type'];
             if ($returns && isset($documentation['class2type'][$returns])) {
-                $returns = ($documentation['types'][$documentation['class2type'][$returns]]['iri'])
-                    ? $documentation['types'][$documentation['class2type'][$returns]]['iri']
-                    : $vocabPrefix . $documentation['class2type'][$returns];
+                $returns = $this->getElementIri($vocabPrefix, $documentation['types'][$documentation['class2type'][$returns]]['iri']);
             }
 
             $result[] = array(
@@ -213,7 +223,7 @@ class DocumentationGenerator
         $context['vocab'] = $this->router->generate('hydra_vocab', array(), true) . '#';
         $context['hydra'] = 'http://purl.org/hydra/core#';
 
-        if ($documentation['types'][$type]['iri']) {
+        if (false !== strpos($documentation['types'][$type]['iri'], ':')) {
             $context[$type] = $documentation['types'][$type]['iri'];
         } else {
             $context[$type] = 'vocab:' . $type;
@@ -222,7 +232,8 @@ class DocumentationGenerator
         $ranges = array();
 
         foreach ($properties as $property => $def) {
-            if ('@id' === $def['type']) {
+            // TODO Make this check more robust
+            if ((self::$typeMap['@id'] === $def['type']) || (self::HYDRA_COLLECTION === $def['type'])) {
                 $context[$property] = array('@id' => 'vocab:' . $property, '@type' => '@id');
             } else {
                 $context[$property] = (false === strpos($def['iri'], ':'))
@@ -240,6 +251,33 @@ class DocumentationGenerator
         // }
 
         return array('@context' => $context);
+    }
+
+    private function getElementIri($vocabPrefix, $iri)
+    {
+        return (false !== strpos($iri, ':')) ? $iri : $vocabPrefix . $iri;  // TODO Handle relative IRIs!?
+    }
+
+    private function getRangeIri($vocabPrefix, $type, $arrayType)
+    {
+        if ('array' === $type) {
+            if (null === $arrayType) {
+                return null;
+            }
+
+            $type = $arrayType;
+        }
+
+        if (isset(self::$typeMap[$type])) {
+            return self::$typeMap[$type];
+        }
+
+        $documentation = $this->getDocumentation();
+        if (!isset($documentation['class2type'][$type])) {
+            throw new \Exception('Found invalid type: ' . $type);
+        }
+
+        return $this->getElementIri($vocabPrefix, $documentation['types'][$documentation['class2type'][$type]]['iri']);
     }
 
     /**
@@ -296,14 +334,14 @@ class DocumentationGenerator
         $doc['return'] = $this->getType($method);
 
 
-        if (('array' === $doc['return']['type']) || ('HydraCollection' === $doc['return']['type'])) {
-            $doc['return']['type'] = 'HydraCollection';
+        if (('array' === $doc['return']['type']) || (self::HYDRA_COLLECTION === $doc['return']['type'])) {
+            $doc['return']['type'] = self::HYDRA_COLLECTION;
         }
 
         if ($doc['return']['type'] && !static::isPrimitiveType($doc['return']['type'])) {
                  $documentation['types2document'][] = $doc['return']['type'];
         }
-        if (@$doc['return']['array_type'] && !static::isPrimitiveType($doc['return']['array_type'])) {
+        if ($doc['return']['array_type'] && !static::isPrimitiveType($doc['return']['array_type'])) {
              $documentation['types2document'][] = $doc['return']['array_type'];
         }
 
@@ -400,7 +438,7 @@ class DocumentationGenerator
 
         $result = array();
         $result += $this->getDocBlockText($class);
-        $result['iri'] = $annotation->iri;
+        $result['iri'] = ($annotation->iri) ? $annotation->iri : $exposeClassAs;
         $result['class'] = $class->name;
         $result['properties'] = array();
 
@@ -494,7 +532,7 @@ class DocumentationGenerator
             if (null !== ($collection = $this->getAnnotation($element, self::COLLECTION_ANNOTATION))) {
                 $collection = $collection->route;
 
-                if ('HydraCollection' !== $documentation['routes'][$collection]['return']['type']) {
+                if (self::HYDRA_COLLECTION !== $documentation['routes'][$collection]['return']['type']) {
                     // TODO Improve this
                     var_dump($documentation['routes'][$collection]);
                     throw new \Exception(sprintf('"%s" in class "%s" is annotated as collection using the route "%s". The route, however, doesn\'t return a collection',
@@ -506,7 +544,7 @@ class DocumentationGenerator
                     throw new \Exception($element->name . ' is being converted to a collection, it\'s return value must therefore be an array');
                 }
 
-                $definition['type'] = 'HydraCollection';
+                $definition['type'] = self::HYDRA_COLLECTION;
                 $definition['array_type'] = $documentation['routes'][$collection]['return']['array_type'];
                 // TODO Check that the IRI template can be filled!?
                 $definition['route'] = $collection;
@@ -534,7 +572,7 @@ class DocumentationGenerator
             if ($definition['type'] && !static::isPrimitiveType($definition['type'])) {
                  $documentation['types2document'][] = $definition['type'];
             }
-            if (@$definition['array_type'] && !static::isPrimitiveType($definition['array_type'])) {
+            if ($definition['array_type'] && !static::isPrimitiveType($definition['array_type'])) {
                  $documentation['types2document'][] = $definition['array_type'];
             }
         }
@@ -587,9 +625,9 @@ class DocumentationGenerator
                 if (false === isset($definition['route'])) {
                     $definition['route'] = $operations[0];
                 }
-            } elseif ('HydraCollection' !== $definition['type']) {
+            } elseif (self::HYDRA_COLLECTION !== $definition['type']) {
                 if ('array' !== $definition['type']) {
-                    throw new \Exception(sprintf('"%s" in "%s" specifies operations but it\'s return type is "%s" instead of array or HydraCollection.',
+                    throw new \Exception(sprintf('"%s" in "%s" specifies operations but it\'s return type is "%s" instead of array or ' . self::HYDRA_COLLECTION,
                         $element->name, $class->name, $definition['type']));
                 } else {
                     $definition['type'] = '@id';
@@ -635,7 +673,7 @@ class DocumentationGenerator
             ? $this->getReturnAnnotation($element)
             : $this->getVarAnnotation($element);
 
-        $result = array('type' => $type, 'original_type' => $type);
+        $result = array('type' => $type, 'original_type' => $type, 'array_type' => null);
 
         if (null === $type) {
             return $result;
@@ -759,8 +797,7 @@ class DocumentationGenerator
      */
     private static function isPrimitiveType($type)
     {
-        // TODO Remove HydraCollection to document it as soon as it exists
-        return in_array($type, array('array', 'string', 'float', 'double', 'boolean', 'bool', 'integer', '@id', 'HydraCollection', 'void'));
+        return in_array($type, array('array', 'string', 'float', 'double', 'boolean', 'bool', 'integer', '@id', 'void'));
     }
 
     /**
