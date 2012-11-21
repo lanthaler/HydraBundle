@@ -119,12 +119,17 @@ class DocumentationGenerator
         $vocabPrefix = $this->router->generate('hydra_vocab', array(), true) . '#';
 
         foreach ($documentation['types'] as $type => $definition) {
+            $description = $definition['title'];
+            if ($description && $definition['description']) {
+                $description .= "\n\n";
+            }
+            $description .= $definition['description'];
+
             $vocab[] = array(
                 '@id' => $this->getElementIri($vocabPrefix, $definition['iri']),
                 '@type' => 'rdfs:Class',
-                'short_name' => $type,
-                'label' => $definition['title'],
-                'description' => $definition['description'],
+                'label' => $type,
+                'description' => $description,
                 'operations' => $this->getOperations4Vocab($documentation, $definition['operations'], $vocabPrefix),
             );
 
@@ -133,12 +138,17 @@ class DocumentationGenerator
                     continue;
                 }
 
+                $description = $property['title'];
+                if ($description && $property['description']) {
+                    $description .= "\n\n";
+                }
+                $description .= $property['description'];
+
                 $vocab[] = array(
                     '@id' => $this->getElementIri($vocabPrefix, $property['iri']),   // TODO Check this
                     '@type' => 'rdfs:Property',
-                    'short_name' => $name,
-                    'label' => $property['title'],
-                    'description' => $property['description'],
+                    'label' => $name,
+                    'description' => $description,
                     'domain' => $this->getElementIri($vocabPrefix, $definition['iri']),
                     'range' => $this->getRangeIri($vocabPrefix, $property['type'], $property['array_type']),
                     'readonly' => $property['readonly'],
