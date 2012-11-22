@@ -289,7 +289,7 @@ class DocumentationGenerator
 
         foreach ($properties as $property => $def) {
             // TODO Make this check more robust
-            if ((self::$typeMap['@id'] === $def['type']) || (self::HYDRA_COLLECTION === $def['type'])) {
+            if (('@id' === $def['type']) || (self::HYDRA_COLLECTION === $def['type'])) {
                 $context[$property] = array('@id' => 'vocab:' . $property, '@type' => '@id');
             } else {
                 $context[$property] = (false === strpos($def['iri'], ':'))
@@ -687,15 +687,16 @@ class DocumentationGenerator
                     $definition['route'] = $operations[0];
                 }
             } elseif (self::HYDRA_COLLECTION !== $definition['type']) {
-                if ('array' !== $definition['type']) {
-                    throw new \Exception(sprintf('"%s" in "%s" specifies operations but it\'s return type is "%s" instead of array or ' . self::HYDRA_COLLECTION,
-                        $element->name, $class->name, $definition['type']));
-                } else {
+                // TODO Check this!
+                // if ('array' !== $definition['type']) {
+                //     throw new \Exception(sprintf('"%s" in "%s" specifies operations but it\'s return type is "%s" instead of array or ' . self::HYDRA_COLLECTION,
+                //         $element->name, $element->name, $definition['type']));
+                // } else {
                     $definition['type'] = '@id';
                     // TODO Check that the IRI template can be filled!?
                     if (false === isset($definition['route'])) {
                         $definition['route'] = $operations[0];
-                    }
+                    // }
                 }
             }
         } else {
