@@ -65,131 +65,6 @@ class Serializer implements SerializerInterface
     }
 
     /**
-     * Deserializes data into the given type.
-     *
-     * @param mixed  $data
-     * @param string $type
-     * @param string $format
-     *
-     * @return object
-     */
-    public function deserialize($data, $type, $format)
-    {
-        if ('jsonld' !== $format) {
-            throw new UnexpectedValueException('Deserialization for the format ' . $format . ' is not supported');
-        }
-
-        $reflectionClass = new \ReflectionClass($type);
-
-        if (null !== ($constructor = $reflectionClass->getConstructor())) {
-            if (0 !== $constructor->getNumberOfRequiredParameters()) {
-                throw new RuntimeException(
-                    'Cannot create an instance of '. $type .
-                    ' from serialized data because its constructor has required parameters.'
-                );
-            }
-        }
-
-        $object = new $type;
-
-        if (!isset($this->docu['class2type'][$type])) {
-            throw new RuntimeException(
-                'Cannot deserialize the data into '. $type .
-                ' as it is not documented by Hydra.'
-            );
-        }
-
-        $vocabBase = $this->router->generate('hydra_vocab', array(), true) . '#';
-        $typeName = $this->docu['class2type'][$type];
-        $typeIri = $vocabBase . $typeName;
-
-        $document = JsonLD::getDocument($data);
-
-        $node = $document->getNodesByType($typeIri);
-
-        if (1 !== count($node)) {
-            throw new RuntimeException(
-                'The passed data contains '. count($node) . ' nodes of the type ' .
-                $type . '; expected 1.'
-            );
-        }
-
-        $node = $node[0];
-
-        foreach ($this->docu['types'][$typeName]['properties'] as $property => $definition) {
-            if ($definition['readonly']) {
-                continue;
-            }
-
-            // TODO Parse route!
-            if (isset($definition['route'])) {
-                continue;   // FIXME Remove this
-
-                $reqVariables = $this->docu['routes'][$definition['route']]['variables'];
-                $parameters = $this->docu['routes'][$definition['route']]['defaults'];
-
-                if (isset($definition['route_variables'])) {
-                    foreach ($definition['route_variables'] as $var => $def) {
-                        if ($def[1]) { // is method?
-                            $parameters[$var] = $data->{$def[0]}();
-                        } else {
-                            $parameters[$var] = $data->{$def[0]};
-                        }
-                    }
-                } else {
-                    $value = $this->getValue($data, $definition);
-                    if (is_array($value)) {
-                        $parameters += $value;
-                    } elseif (is_scalar($value) && (1 === count($reqVariables))) {
-                        $parameters[$reqVariables[0]] = $value;
-                    }
-                }
-
-                // TODO Remove this hack
-                if (in_array('id', $reqVariables) && !isset($parameters['id']) && is_callable(array($data, 'getId'))) {
-                    $parameters['id'] = $data->getId();
-                }
-
-                $route =  $this->router->generate($definition['route'], $parameters);
-
-                if ('HydraCollection' === $definition['type']) {
-                    $result[$property] = array(
-                        '@id' => $route,
-                        '@type' => 'hydra:Collection'
-                    );
-                } else {
-                    $result[$property] = $route;
-                }
-
-                // Add @type after @id
-                if ('@id' === $property) {
-                    $result['@type'] = $type;
-                }
-
-                continue;
-            }
-
-            // TODO Recurse!?
-
-            $propertyPath = new PropertyPath($definition['element']);
-            $propertyPath->setValue($object, $node->getProperty($vocabBase . $definition['iri_fragment']));
-
-            //$this->setValue($data, $definition, $node->getProperty($vocabBase . $definition['iri_fragment']));
-
-            // if (is_array($value) || ($value instanceof \ArrayAccess) || ($value instanceof \Travesable)) {
-            //     $result[$property] = array();
-            //     foreach ($value as $val) {
-            //         $result[$property][] = $this->doSerialize($val);
-            //     }
-            // } else {
-            //     $result[$property] = $value;
-            // }
-        }
-
-        return $object;
-    }
-
-    /**
      * Serializes data
      *
      * @param mixed  $data        The data to serialize.
@@ -333,6 +208,131 @@ class Serializer implements SerializerInterface
 
             return $result;
         }
+    }
+
+    /**
+     * Deserializes data into the given type.
+     *
+     * @param mixed  $data
+     * @param string $type
+     * @param string $format
+     *
+     * @return object
+     */
+    public function deserialize($data, $type, $format)
+    {
+        if ('jsonld' !== $format) {
+            throw new UnexpectedValueException('Deserialization for the format ' . $format . ' is not supported');
+        }
+
+        $reflectionClass = new \ReflectionClass($type);
+
+        if (null !== ($constructor = $reflectionClass->getConstructor())) {
+            if (0 !== $constructor->getNumberOfRequiredParameters()) {
+                throw new RuntimeException(
+                    'Cannot create an instance of '. $type .
+                    ' from serialized data because its constructor has required parameters.'
+                );
+            }
+        }
+
+        $object = new $type;
+
+        if (!isset($this->docu['class2type'][$type])) {
+            throw new RuntimeException(
+                'Cannot deserialize the data into '. $type .
+                ' as it is not documented by Hydra.'
+            );
+        }
+
+        $vocabBase = $this->router->generate('hydra_vocab', array(), true) . '#';
+        $typeName = $this->docu['class2type'][$type];
+        $typeIri = $vocabBase . $typeName;
+
+        $document = JsonLD::getDocument($data);
+
+        $node = $document->getNodesByType($typeIri);
+
+        if (1 !== count($node)) {
+            throw new RuntimeException(
+                'The passed data contains '. count($node) . ' nodes of the type ' .
+                $type . '; expected 1.'
+            );
+        }
+
+        $node = $node[0];
+
+        foreach ($this->docu['types'][$typeName]['properties'] as $property => $definition) {
+            if ($definition['readonly']) {
+                continue;
+            }
+
+            // TODO Parse route!
+            if (isset($definition['route'])) {
+                continue;   // FIXME Remove this
+
+                $reqVariables = $this->docu['routes'][$definition['route']]['variables'];
+                $parameters = $this->docu['routes'][$definition['route']]['defaults'];
+
+                if (isset($definition['route_variables'])) {
+                    foreach ($definition['route_variables'] as $var => $def) {
+                        if ($def[1]) { // is method?
+                            $parameters[$var] = $data->{$def[0]}();
+                        } else {
+                            $parameters[$var] = $data->{$def[0]};
+                        }
+                    }
+                } else {
+                    $value = $this->getValue($data, $definition);
+                    if (is_array($value)) {
+                        $parameters += $value;
+                    } elseif (is_scalar($value) && (1 === count($reqVariables))) {
+                        $parameters[$reqVariables[0]] = $value;
+                    }
+                }
+
+                // TODO Remove this hack
+                if (in_array('id', $reqVariables) && !isset($parameters['id']) && is_callable(array($data, 'getId'))) {
+                    $parameters['id'] = $data->getId();
+                }
+
+                $route =  $this->router->generate($definition['route'], $parameters);
+
+                if ('HydraCollection' === $definition['type']) {
+                    $result[$property] = array(
+                        '@id' => $route,
+                        '@type' => 'hydra:Collection'
+                    );
+                } else {
+                    $result[$property] = $route;
+                }
+
+                // Add @type after @id
+                if ('@id' === $property) {
+                    $result['@type'] = $type;
+                }
+
+                continue;
+            }
+
+            // TODO Recurse!?
+
+            $propertyPath = new PropertyPath($definition['element']);
+            $propertyPath->setValue($object, $node->getProperty($vocabBase . $definition['iri_fragment']));
+
+            //$this->setValue($data, $definition, $node->getProperty($vocabBase . $definition['iri_fragment']));
+
+            // if (is_array($value) || ($value instanceof \ArrayAccess) || ($value instanceof \Travesable)) {
+            //     $result[$property] = array();
+            //     foreach ($value as $val) {
+            //         $result[$property][] = $this->doSerialize($val);
+            //     }
+            // } else {
+            //     $result[$property] = $value;
+            // }
+        }
+
+        return $object;
     }
 
     private function getValue($object, $definition)
