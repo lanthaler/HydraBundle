@@ -231,6 +231,11 @@ class Serializer implements SerializerInterface
                 }
 
                 if (isset($definition['route'])) {
+                    // TODO Check this!
+                    if (false === $this->getValue($data, $definition)) {
+                        continue;
+                    }
+
                     $reqVariables = $this->docu['routes'][$definition['route']]['variables'];
                     $parameters = $this->docu['routes'][$definition['route']]['defaults'];
 
