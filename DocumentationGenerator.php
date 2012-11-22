@@ -279,32 +279,22 @@ class DocumentationGenerator
         $context['vocab'] = $this->router->generate('hydra_vocab', array(), true) . '#';
         $context['hydra'] = 'http://purl.org/hydra/core#';
 
-        if (false !== strpos($documentation['types'][$type]['iri'], ':')) {
-            $context[$type] = $documentation['types'][$type]['iri'];
-        } else {
-            $context[$type] = 'vocab:' . $type;
-        }
+        $context[$type] = $this->getElementCompactIri(
+            $context['vocab'],
+             'vocab',
+             $documentation['types'][$type]['iri']
+        );
 
         $ranges = array();
 
         foreach ($properties as $property => $def) {
+            $context[$property] = $this->getElementCompactIri($context['vocab'], 'vocab', $def['iri']);
+
             // TODO Make this check more robust
             if (('@id' === $def['type']) || (self::HYDRA_COLLECTION === $def['type'])) {
-                $context[$property] = array('@id' => 'vocab:' . $property, '@type' => '@id');
-            } else {
-                $context[$property] = (false === strpos($def['iri'], ':'))
-                    ? 'vocab:' . $def['iri']
-                    : $def['iri'];
-
-                // if (isset($documentation['class2type'][$def['type']])) {
-                //     $ranges[$documentation['class2type'][$def['type']]] = true;
-                // }
+                $context[$property] = array('@id' => $context[$property], '@type' => '@id');
             }
         }
-
-        // foreach ($ranges as $type => $def) {
-        //     $context[$property] = 'vocab:' . $type;
-        // }
 
         return array('@context' => $context);
     }
@@ -312,6 +302,20 @@ class DocumentationGenerator
     private function getElementIri($vocabPrefix, $iri)
     {
         return (false !== strpos($iri, ':')) ? $iri : $vocabPrefix . $iri;  // TODO Handle relative IRIs!?
+    }
+
+    private function getElementCompactIri($vocabIri, $vocabPrefix, $iri)
+    {
+        if (false !== strpos($iri, ':')) {
+            if ($vocabIri === substr($iri, 0, strlen($vocabIri))) {
+                return $vocabPrefix . ':' . substr($iri, strlen($vocabIri));
+            }
+
+            return $iri;
+        } else {
+            // it's just a fragment
+            return $vocabPrefix . ':' . $iri;
+        }
     }
 
     private function getRangeIri($vocabPrefix, $type, $arrayType)
