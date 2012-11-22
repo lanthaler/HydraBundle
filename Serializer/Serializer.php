@@ -90,6 +90,8 @@ class Serializer implements SerializerInterface
             }
         }
 
+        $object = new $type;
+
         if (!isset($this->docu['class2type'][$type])) {
             throw new RuntimeException(
                 'Cannot deserialize the data into '. $type .
@@ -113,8 +115,6 @@ class Serializer implements SerializerInterface
         }
 
         $node = $node[0];
-
-        $object = new $type;
 
         foreach ($this->docu['types'][$typeName]['properties'] as $property => $definition) {
             if ($definition['readonly']) {
