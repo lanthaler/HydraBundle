@@ -52,6 +52,9 @@ The default command only generates the safe GET operations for the collection an
 Using the --with-write option allows to generate the POST operation for the collection and PUT and DELETE for the entity.
 
 <info>php app/console hydra:generate:crud --entity=AcmeBlogBundle:Post --route-prefix=/prefix --with-write</info>
+
+If you pass  all required options directly from the command line you can turn the interactive mode by passing
+the --no-interaction flag.
 EOT
             )
             ->setName('hydra:generate:crud')
@@ -140,7 +143,7 @@ EOT
         $output->writeln(array(
             '',
             'Determine the routes prefix (all the routes will be "mounted" under this',
-            'prefix: /prefix/, /prefix/new, ...).',
+            'prefix: /prefix/, /prefix/{id}, ...).',
             '',
         ));
         $prefix = $dialog->ask($output, $dialog->getQuestion('Routes prefix', '/'.$prefix), '/'.$prefix);

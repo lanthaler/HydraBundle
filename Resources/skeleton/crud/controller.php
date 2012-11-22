@@ -6,7 +6,7 @@ namespace {{ namespace }}\Controller{{ entity_namespace ? '\\' ~ entity_namespac
 use Symfony\Component\HttpFoundation\Request;
 {%- endif %}
 
-use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use ML\HydraBundle\Controller\HydraController;
 use ML\HydraBundle\Mapping as Hydra;
 {% if 'annotation' == format -%}
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
@@ -22,7 +22,7 @@ use {{ namespace }}\Entity\{{ entity }};
  * @Route("/{{ route_prefix }}")
 {% endif %}
  */
-class {{ entity_class }}Controller extends Controller
+class {{ entity_class }}Controller extends HydraController
 {
 
     {%- if 'collection_get' in actions %}
@@ -44,5 +44,4 @@ class {{ entity_class }}Controller extends Controller
     {%- if 'entity_delete' in actions %}
         {%- include 'actions/entity_delete.php' %}
     {%- endif %}
-
 }

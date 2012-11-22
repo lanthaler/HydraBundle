@@ -1,6 +1,6 @@
 
     /**
-     * Replaces an existing {{ entity }} entity
+     * Replaces an existing {{ entity }}
      *
 {% if 'annotation' == format %}
      * @Route("/{id}", name="{{ route_name_prefix }}_replace")
@@ -10,7 +10,7 @@
      * @Hydra\Operation(
      *   expect = "{{ namespace }}\Entity\{{ entity }}",
      *   status_codes = {
-     *     "404" = "If the {{ entity }} entity wasn't found."
+     *     "404" = "If the {{ entity }} wasn't found."
      *   }
      * )
      *
@@ -18,17 +18,15 @@
      */
     public function putAction(Request $request, {{ entity }} $entity)
     {
-        $em = $this->getDoctrine()->getManager();
+        $entity = $this->deserialize($request->getContent(), $entity);
 
-        $editForm = $this->createForm(new {{ entity_class }}Type(), $entity);
-        $editForm->bind($request);
-
-        if ($editForm->isValid()) {
-            $em->persist($entity);
-            $em->flush();
-
-            return $this->redirect($this->generateUrl('{{ route_name_prefix }}_retrieve', array('id' => $id)));
+        if (false !== ($errors = $this->validate($entity))) {
+            return $errors;
         }
+
+        $em = $this->getDoctrine()->getManager();
+        $em->persist($entity);
+        $em->flush();
 
         return $entity;
     }

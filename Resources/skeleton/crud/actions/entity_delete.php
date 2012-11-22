@@ -1,6 +1,6 @@
 
     /**
-     * Deletes a {{ entity }} entity
+     * Deletes a {{ entity }}
      *
 {% if 'annotation' == format %}
      * @Route("/{id}", name="{{ route_name_prefix }}_delete")

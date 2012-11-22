@@ -1,6 +1,6 @@
 
     /**
-     * Creates a new {{ entity }} entity
+     * Creates a new {{ entity }}
      *
 {% if 'annotation' == format %}
      * @Route("/", name="{{ route_name_prefix }}_create")
@@ -13,35 +13,25 @@
      */
     public function collectionPostAction(Request $request)
     {
-        $entity  = new {{ entity_class }}();
-        $form = $this->createForm(new {{ entity_class }}Type(), $entity);
-        $form->bind($request);
+        $entity = $this->deserialize($request->getContent(), '{{ namespace }}\Entity\{{ entity }}');
 
-        if ($form->isValid()) {
-            $em = $this->getDoctrine()->getManager();
-            $em->persist($entity);
-            $em->flush();
-
-            {% if 'entity_get' in actions -%}
-                return $this->redirect($this->generateUrl(
-                '{{ route_name_prefix }}_retrieve',
-                 array('id' => $entity->getId())
-            ));
-            {%- else -%}
-                return $this->redirect($this->generateUrl('{{ route_name_prefix }}_collection_get'));
-            {%- endif %}
-
+        if (false !== ($errors = $this->validate($entity))) {
+            return $errors;
         }
 
-{% if 'annotation' == format %}
-        return array(
-            'entity' => $entity,
-            'form'   => $form->createView(),
+        $em = $this->getDoctrine()->getManager();
+        $em->persist($entity);
+        $em->flush();
+
+{% if 'entity_get' in actions %}
+        $iri = $this->generateUrl('{{ route_name_prefix }}_retrieve', array('id' => $entity->getId()), true);
+
+        $response = new JsonLdResponse(
+            $this->serialize($entity),
+            201,
+            array('Content-Location' => $iri)
         );
 {% else %}
-        return $this->render('{{ bundle }}:{{ entity|replace({'\\': '/'}) }}:new.html.twig', array(
-            'entity' => $entity,
-            'form'   => $form->createView(),
-        ));
+        return new JsonLdResponse('', 201);
 {% endif %}
     }
