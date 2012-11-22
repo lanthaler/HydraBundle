@@ -588,6 +588,11 @@ class DocumentationGenerator
             if (null !== ($collection = $this->getAnnotation($element, self::COLLECTION_ANNOTATION))) {
                 $collection = $collection->route;
 
+                if (!isset($documentation['routes'][$collection]['return']['type'])) {
+                    throw new \Exception(sprintf('"%s" in class "%s" is annotated as collection using the route "%s". The route, however, isn\'t annotated.',
+                        $element->name, $class->name, $collection));
+                }
+
                 if (self::HYDRA_COLLECTION !== $documentation['routes'][$collection]['return']['type']) {
                     // TODO Improve this
                     var_dump($documentation['routes'][$collection]);
