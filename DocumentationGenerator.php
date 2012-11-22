@@ -610,6 +610,7 @@ class DocumentationGenerator
                 $definition['array_type'] = $documentation['routes'][$collection]['return']['array_type'];
                 // TODO Check that the IRI template can be filled!?
                 $definition['route'] = $collection;
+                $definition['readonly'] = true;
             }
             $definition['collection'] = $collection;
 
@@ -697,8 +698,9 @@ class DocumentationGenerator
                     // TODO Check that the IRI template can be filled!?
                     if (false === isset($definition['route'])) {
                         $definition['route'] = $operations[0];
-                    // }
-                }
+                    }
+                // }
+                $definition['readonly'] = true;
             }
         } else {
             $operations = array();
