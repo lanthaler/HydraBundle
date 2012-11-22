@@ -103,17 +103,6 @@ class SerializerListener
 
         $serialized = $this->serializer->serialize($result, 'jsonld');
 
-if ($request->query->get('debug', false)) {
-    print "<pre>" . $serialized . "</pre>";
-} else {
-    print $serialized;
-}
-
-//print "<pre>" . json_encode($serialized, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . "</pre>";
-// var_dump($serialized);
-//var_dump($this->hydraDoc['types'][$className]);
-die();
-
         $event->setResponse(new JsonLdResponse($serialized));
     }
 }

@@ -599,7 +599,6 @@ class DocumentationGenerator
 
                 if (self::HYDRA_COLLECTION !== $documentation['routes'][$collection]['return']['type']) {
                     // TODO Improve this
-                    var_dump($documentation['routes'][$collection]);
                     throw new \Exception(sprintf('"%s" in class "%s" is annotated as collection using the route "%s". The route, however, doesn\'t return a collection',
                         $element->name, $class->name, $collection));
                 }
