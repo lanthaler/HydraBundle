@@ -239,12 +239,8 @@ class Serializer implements SerializerInterface
         return $this->doDeserialize($data, new $type);
     }
 
-    public function deserializeIntoEntity($data, $entity, $format)
+    public function deserializeIntoEntity($data, $entity)
     {
-        if ('jsonld' !== $format) {
-            throw new UnexpectedValueException('Deserialization for the format ' . $format . ' is not supported');
-        }
-
         return $this->doDeserialize($data, $entity);
     }
 
