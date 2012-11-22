@@ -91,8 +91,6 @@ class DocumentationGenerator
         $documentation['vocab_base'] = $this->router->generate('hydra_vocab');
         $documentation['vocab_base_abs'] = $this->router->generate('hydra_vocab', array(), true);
 
-        $this->documentType($documentation, 'ML\HydraBundle\Collection\Collection');
-
         foreach ($this->router->getRouteCollection()->all() as $name => $route) {
             if ($method = $this->getReflectionMethod($route->getDefault('_controller'))) {
                 if ($annotation = $this->getAnnotation($method, self::OPERATION_ANNOTATION)) {
