@@ -34,7 +34,7 @@ class DocumentationGenerator
         'double' => 'http://www.w3.org/2001/XMLSchema#double',
         'boolean' => 'http://www.w3.org/2001/XMLSchema#boolean',
         'bool' => 'http://www.w3.org/2001/XMLSchema#boolean',
-        '@id' => 'http://www.w3.org/2000/01/rdf-schema#Resource',
+        '@id' => 'http://www.w3.org/2001/XMLSchema#anyURI',
         'void' => 'http://www.w3.org/2002/07/owl#Nothing'
     );
 
@@ -157,6 +157,52 @@ class DocumentationGenerator
                 );
             }
         }
+
+        // TODO Remove this??
+        // Add XSD types to vocab so that they don't have to be retrieved remotely
+        $vocab[] = array(
+            '@id' => 'http://www.w3.org/2001/XMLSchema#string',
+            '@type' => 'rdfs:Datatype',
+            'label' => 'string',
+            'description' => ''
+        );
+        $vocab[] = array(
+            '@id' => 'http://www.w3.org/2001/XMLSchema#integer',
+            '@type' => 'rdfs:Datatype',
+            'label' => 'integer',
+            'description' => ''
+        );
+        $vocab[] = array(
+            '@id' => 'http://www.w3.org/2001/XMLSchema#float',
+            '@type' => 'rdfs:Datatype',
+            'label' => 'float',
+            'description' => ''
+        );
+        $vocab[] = array(
+            '@id' => 'http://www.w3.org/2001/XMLSchema#double',
+            '@type' => 'rdfs:Datatype',
+            'label' => 'double',
+            'description' => ''
+        );
+        $vocab[] = array(
+            '@id' => 'http://www.w3.org/2001/XMLSchema#boolean',
+            '@type' => 'rdfs:Datatype',
+            'label' => 'boolean',
+            'description' => ''
+        );
+        $vocab[] = array(
+            '@id' => 'http://www.w3.org/2001/XMLSchema#anyURI',
+            '@type' => 'rdfs:Datatype',
+            'label' => 'IRI',
+            'description' => ''
+        );
+        $vocab[] = array(
+            '@id' => 'http://www.w3.org/2002/07/owl#Nothing',
+            '@type' => 'http://www.w3.org/2002/07/owl#Class',
+            'label' => 'void',
+            'description' => ''
+        );
+
 
         $vocab = array(
             '@context' => array(
