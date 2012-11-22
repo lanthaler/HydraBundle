@@ -236,7 +236,12 @@ class Serializer implements SerializerInterface
             }
         }
 
-        $object = new $type;
+        return $this->doDeserialize($data, new $type);
+    }
+
+    private function doDeserialize($data, $entity)
+    {
+        $type = get_class($entity);
 
         if (!isset($this->docu['class2type'][$type])) {
             throw new RuntimeException(
@@ -318,7 +323,7 @@ class Serializer implements SerializerInterface
             // TODO Recurse!?
 
             $propertyPath = new PropertyPath($definition['element']);
-            $propertyPath->setValue($object, $node->getProperty($vocabBase . $definition['iri_fragment']));
+            $propertyPath->setValue($entity, $node->getProperty($vocabBase . $definition['iri']));  // TODO Fix IRI construction
 
             //$this->setValue($data, $definition, $node->getProperty($vocabBase . $definition['iri_fragment']));
 
@@ -332,7 +337,7 @@ class Serializer implements SerializerInterface
             // }
         }
 
-        return $object;
+        return $entity;
     }
 
     private function getValue($object, $definition)
