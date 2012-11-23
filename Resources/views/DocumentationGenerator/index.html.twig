@@ -144,7 +144,7 @@ table.operations th, table.operations td {
                 Array type: {{ property.array_type|default("n/a")}}<br />
                 Route: {{ property.route|default("n/a") }}<br />
             {% if property.route_variables is defined %}
-                Variables: {% for variable, element in property.route_variables %} {{ variable }} -> {{ element}}, {% endfor %}<br />
+                Variables: {% for variable, element in property.route_variables %} {{ variable }} -> {{ element[0] }}, {% endfor %}<br />
             {% endif %}
                 Collection route: {{ property.collection_route|default("n/a") }}
             </td>
