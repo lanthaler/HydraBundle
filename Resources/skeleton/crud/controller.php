@@ -8,6 +8,7 @@ use Symfony\Component\HttpFoundation\Request;
 
 use ML\HydraBundle\Controller\HydraController;
 use ML\HydraBundle\Mapping as Hydra;
+use ML\HydraBundle\JsonLdResponse;
 {% if 'annotation' == format -%}
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
