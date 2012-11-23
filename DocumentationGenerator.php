@@ -54,17 +54,25 @@ class DocumentationGenerator
     private $reader;
 
     /**
+     * @var array
+     */
+    private $normalizers;
+
+
+    /**
      * Constructor
      *
-     * @param ContainerInterface $container The service container.
-     * @param RouterInterface    $router    The router.
-     * @param Reader             $reader    The annotation reader.
+     * @param ContainerInterface $container   The service container.
+     * @param RouterInterface    $router      The router.
+     * @param Reader             $reader      The annotation reader.
+     * @param array              $normalizers The datatype normalizers.
      */
-    public function __construct(ContainerInterface $container, RouterInterface $router, Reader $reader)
+    public function __construct(ContainerInterface $container, RouterInterface $router, Reader $reader, array $normalizers = array())
     {
-        $this->container = $container;
-        $this->router    = $router;
-        $this->reader    = $reader;
+        $this->container   = $container;
+        $this->router      = $router;
+        $this->reader      = $reader;
+        $this->normalizers = $normalizers;
     }
 
     public function isOperation(\ReflectionMethod $method)
@@ -291,6 +299,9 @@ class DocumentationGenerator
             // TODO Make this check more robust
             if (('@id' === $def['type']) || (self::HYDRA_COLLECTION === $def['type'])) {
                 $context[$property] = array('@id' => $context[$property], '@type' => '@id');
+            } elseif ($this->hasNormalizer($def['type'])) {
+                $normalizer = $this->getNormalizer($def['type']);
+                $context[$property] = array('@id' => $context[$property], '@type' => $normalizer->getTypeIri());
             }
         }
 
@@ -328,6 +339,10 @@ class DocumentationGenerator
 
         if (isset(self::$typeMap[$type])) {
             return self::$typeMap[$type];
+        }
+
+        if ($this->hasNormalizer($type)) {
+            return $this->getElementIri($vocabPrefix, $this->getNormalizer($type)->getTypeIri());
         }
 
         $documentation = $this->getDocumentation();
@@ -464,6 +479,10 @@ class DocumentationGenerator
     protected function documentType(&$documentation, $class, $group = null)
     {
         if (self::isPrimitiveType($class)) {
+            return;
+        }
+
+        if ($this->hasNormalizer($class)) {
             return;
         }
 
@@ -894,5 +913,29 @@ class DocumentationGenerator
     private function camelize($string)
     {
         return preg_replace_callback('/(^|_|\.)+(.)/', function ($match) { return ('.' === $match[1] ? '_' : '').strtoupper($match[2]); }, $string);
+    }
+
+    /**
+     * Exists a normalizer for the passed class?
+     *
+     * @param string $class The class for which a normalizer is required.
+     *
+     * @return boolean Returns true if a normalizer exists, false otherwise.
+     */
+    public function hasNormalizer($class)
+    {
+        return array_key_exists($class, $this->normalizers);
+    }
+
+    /**
+     * Gets the normalizer for the passed class
+     *
+     * @param string $class The class whose normalizer should be retrieved
+     *
+     * @return object Returns the normalizer for the specified class
+     */
+    public function getNormalizer($class)
+    {
+        return $this->container->get($this->normalizers[$class]);
     }
 }

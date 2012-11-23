@@ -28,13 +28,13 @@ use ML\HydraBundle\DocumentationGenerator;
  */
 class Serializer implements SerializerInterface
 {
+    protected $docgen;
     protected $docu;
-    protected $types;
-    protected $routes;
     protected $router;
 
     public function __construct(DocumentationGenerator $documentationGenerator, RouterInterface $router)
     {
+        $this->docgen = $documentationGenerator;
         $this->docu = $documentationGenerator->getDocumentation();
         $this->router = $router;
     }
@@ -159,7 +159,10 @@ class Serializer implements SerializerInterface
 
                 $value = $this->getValue($data, $definition);
 
-                if (is_array($value) || ($value instanceof \ArrayAccess) || ($value instanceof \Travesable)) {
+                if (is_object($value) && $this->docgen->hasNormalizer(get_class($value))) {
+                    $normalizer = $this->docgen->getNormalizer(get_class($value));
+                    $result[$property] = $normalizer->normalize($value);
+                } elseif (is_array($value) || ($value instanceof \ArrayAccess) || ($value instanceof \Travesable)) {
                     $result[$property] = array();
                     foreach ($value as $val) {
                         $result[$property][] = $this->doSerialize($val);
