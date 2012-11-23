@@ -31,6 +31,8 @@
             201,
             array('Content-Location' => $iri)
         );
+
+        return $response;
 {% else %}
         return new JsonLdResponse('', 201);
 {% endif %}
