@@ -930,6 +930,10 @@ class DocumentationGenerator
      */
     public function hasNormalizer($class)
     {
+        if ('\\' === $class[0]) {
+            $class = substr($class, 1);
+        }
+
         return array_key_exists($class, $this->normalizers);
     }
 
@@ -942,6 +946,10 @@ class DocumentationGenerator
      */
     public function getNormalizer($class)
     {
+        if ('\\' === $class[0]) {
+            $class = substr($class, 1);
+        }
+
         return $this->container->get($this->normalizers[$class]);
     }
 }
