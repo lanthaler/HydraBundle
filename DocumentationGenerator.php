@@ -203,6 +203,12 @@ class DocumentationGenerator
             'description' => ''
         );
         $vocab[] = array(
+            '@id' => 'http://www.w3.org/2001/XMLSchema#dateTime',
+            '@type' => 'rdfs:Datatype',
+            'label' => 'datetime',
+            'description' => ''
+        );
+        $vocab[] = array(
             '@id' => 'http://www.w3.org/2002/07/owl#Nothing',
             '@type' => 'http://www.w3.org/2002/07/owl#Class',
             'label' => 'void',
