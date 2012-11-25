@@ -560,6 +560,11 @@ class DocumentationGenerator
 
         $this->documentOperations($class, $result, $documentation);
 
+        if (isset($result['properties']['@id']['route']) &&
+            !in_array($result['properties']['@id']['route'], $result['operations'])) {
+            $result['operations'][] = $result['properties']['@id']['route'];
+        }
+
         $interfaces = $class->getInterfaces();
         $linkRelationMethods = array();
         foreach ($interfaces as $interface) {
