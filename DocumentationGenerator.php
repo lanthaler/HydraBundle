@@ -25,6 +25,8 @@ class DocumentationGenerator
 
     const COLLECTION_ANNOTATION = 'ML\\HydraBundle\\Mapping\\Collection';
 
+    const ROUTE_ANNOTATION = 'ML\\HydraBundle\\Mapping\\Route';
+
     const HYDRA_COLLECTION = 'ML\\HydraBundle\\Collection\\Collection';
 
     private static $typeMap = array(
@@ -303,7 +305,7 @@ class DocumentationGenerator
             $context[$property] = $this->getElementCompactIri($context['vocab'], 'vocab', $def['iri']);
 
             // TODO Make this check more robust
-            if (('@id' === $def['type']) || (self::HYDRA_COLLECTION === $def['type'])) {
+            if ($def['route']) {
                 $context[$property] = array('@id' => $context[$property], '@type' => '@id');
             } elseif ($this->hasNormalizer($def['type'])) {
                 $normalizer = $this->getNormalizer($def['type']);
@@ -612,6 +614,18 @@ class DocumentationGenerator
             $definition['writeonly'] = $annotation->writeonly;
             $definition += $this->getDocBlockText($element);
 
+            if (null !== ($annotation = $this->getAnnotation($element, self::ROUTE_ANNOTATION))) {
+                if (!isset($documentation['routes'][$annotation->route]['return']['type'])) {
+                    throw new \Exception(sprintf('"%s" in class "%s" is annotated as collection using the route "%s". The route, however, isn\'t annotated.',
+                        $element->name, $class->name, $annotation->route));
+                }
+
+                // TODO Check that the IRI template can be filled!?
+                $definition['route'] = $annotation->route;
+            } else {
+                $definition['route'] = null;
+            }
+
             if (null !== ($collection = $this->getAnnotation($element, self::COLLECTION_ANNOTATION))) {
                 $collection = $collection->route;
 
@@ -693,6 +707,13 @@ class DocumentationGenerator
         if (null !== ($operations = $this->getAnnotation($element, $operationsAnnot))) {
             $operations = $operations->operations;
 
+            if (!isset($definition['route'])) {
+                // TODO Remove this, @id should be handled different from all other properties instead
+                if (false === ($element instanceof \ReflectionClass)) {
+                    throw new \Exception("No route set for {$element->class}::{$element->name}");
+                }
+            }
+
             $expectedIriPattern = isset($definition['route'])
                 ? $documentation['routes'][$definition['route']]['iri']
                 : $documentation['routes'][$operations[0]]['iri'];
@@ -700,8 +721,8 @@ class DocumentationGenerator
             foreach ($operations as $operation) {
                 if ($documentation['routes'][$operation]['iri'] !== $expectedIriPattern) {
                     if ($definition['route']) {
-                        throw new \Exception(sprintf('The operations (routes: %s) associated with "%s" in "%s" don\'t use the properties IRI pattern "%s".',
-                            implode(', ', $operations), $element->name, $class->name, $expectedIriPattern));
+                        throw new \Exception(sprintf('The operations (routes: %s) associated with "%s" in "%s" don\'t match the property\'s route "%s".',
+                            implode(', ', $operations), $element->name, $element->class, $expectedIriPattern));
                     }
                     throw new \Exception(sprintf('The operations (routes: %s) associated with "%s" in "%s" don\'t use the same IRI pattern.',
                             implode(', ', $operations), $element->name, $class->name));
@@ -729,6 +750,10 @@ class DocumentationGenerator
             }
         } else {
             $operations = array();
+        }
+
+        if (isset($definition['route']) && (!in_array($definition['route'], $operations))) {
+            $operations[] = $definition['route'];
         }
 
         $definition['operations'] = $operations;
