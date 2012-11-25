@@ -11,6 +11,14 @@ namespace ML\HydraBundle\Mapping;
 
 
 /**
+ * Operations annotation
+ *
+ * The Operations annotation allows to associate a number of supported
+ * operations to an element.
+ *
+ * This annotation should not be confused with the {@link Operation}
+ * annotation which is used to document controller methods.
+ *
  * @Annotation
  */
 class Operations

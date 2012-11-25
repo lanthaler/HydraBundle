@@ -11,6 +11,13 @@ namespace ML\HydraBundle\Mapping;
 
 
 /**
+ * Id annotation
+ *
+ * The Id annotation is used to specify the "route"  which is used to create
+ * the identifier (an IRI) of an instance objects of the annotated class.
+ * The optional "variables" parameter may be used to specify how route
+ * variables are mapped to properties/methods of the object. *
+ *
  * @Annotation
  * @Target({"CLASS"})
  */

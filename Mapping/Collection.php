@@ -11,6 +11,12 @@ namespace ML\HydraBundle\Mapping;
 
 
 /**
+ * Collection annotation
+ *
+ * Elements annotated with Collection are transformed into a Hydra Collection
+ * when serialized. The route parameter allows to set the IRI at which the
+ * collection can be retrieved.
+ *
  * @Annotation
  * @Target({"PROPERTY", "METHOD"})
  */
