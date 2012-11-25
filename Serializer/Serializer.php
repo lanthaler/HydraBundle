@@ -105,9 +105,10 @@ class Serializer implements SerializerInterface
                     continue;
                 }
 
+                $value = $this->getValue($data, $definition);
+
                 if (isset($definition['route'])) {
-                    // TODO Check this!
-                    if (false === $this->getValue($data, $definition)) {
+                    if (false === $value) {
                         continue;
                     }
 
@@ -123,15 +124,19 @@ class Serializer implements SerializerInterface
                             }
                         }
                     } else {
-                        $value = $this->getValue($data, $definition);
                         if (is_array($value)) {
                             $parameters += $value;
-                        } elseif (is_scalar($value) && (1 === count($reqVariables))) {
-                            $parameters[$reqVariables[0]] = $value;
+                        } elseif (1 === count($reqVariables)) {
+                            if (is_scalar($value)) {
+                                $parameters[$reqVariables[0]] = $value;
+                            } elseif (is_object($value) && is_callable(array($value, 'getId'))) {
+                                // TODO Make the is_callable check more robust
+                                $parameters[$reqVariables[0]] = $value->getId();
+                            }
                         }
                     }
 
-                    // TODO Remove this hack
+                    // TODO Remove this hack!?
                     if (in_array('id', $reqVariables) && !isset($parameters['id']) && is_callable(array($data, 'getId'))) {
                         $parameters['id'] = $data->getId();
                     }
@@ -156,8 +161,6 @@ class Serializer implements SerializerInterface
                 }
 
                 // TODO Recurse
-
-                $value = $this->getValue($data, $definition);
 
                 if (is_object($value) && $this->docgen->hasNormalizer(get_class($value))) {
                     $normalizer = $this->docgen->getNormalizer(get_class($value));
@@ -350,6 +353,20 @@ class Serializer implements SerializerInterface
 
     private function getValue($object, $definition)
     {
+        if (isset($definition['route_variables']) && (count($definition['route_variables']) > 0)) {
+            $result = array();
+            foreach ($definition['route_variables'] as $var => $def) {
+                // is method?
+                if (true === $def[1]) {
+                    $result[$var] = $object->{$def[0]}();
+                } else {
+                    $result[$var] = $object->{$def[0]};
+                }
+            }
+
+            return $result;
+        }
+
         if (isset($definition['getter'])) {
             if ($definition['getter_is_method']) {
                 return $object->{$definition['getter']}();
