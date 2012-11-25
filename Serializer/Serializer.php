@@ -129,6 +129,8 @@ class Serializer implements SerializerInterface
                         } elseif (is_object($value) && is_callable(array($value, 'getId'))) {
                             // TODO Make the is_callable check more robust
                             $parameters[$reqVariables[0]] = $value->getId();
+                        } elseif (null === $value) {
+                            continue;
                         }
                     }
                 }
