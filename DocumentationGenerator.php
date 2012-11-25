@@ -601,7 +601,7 @@ class DocumentationGenerator
                 if ($annotation->iri) {
                     $definition['iri'] = $annotation->iri;
                 } else {
-                    $definition['iri'] = $exposeAs;
+                    $definition['iri'] = $exposeClassAs . '/' . $exposeAs;
                 }
             } else {
                 $exposeAs = $this->propertirize($exposeAs);
@@ -611,6 +611,7 @@ class DocumentationGenerator
                 } else {
                     $definition['iri'] = $this->camelize($exposeAs);
                     $definition['iri'][0] = strtolower($definition['iri'][0]);
+                    $definition['iri'] =  $exposeClassAs . '/' . $definition['iri'];
                 }
             }
 
