@@ -75,145 +75,141 @@ class Serializer implements SerializerInterface
      */
     private function doSerialize($data, $include = false)
     {
-        // TODO Need to handle cycles!
+        // TODO Handle cycles!
 
-        if (is_array($data)) {
-            die ('HydraCollection');
-        } elseif (is_object($data)) {
-            $className = class_exists('Doctrine\Common\Util\ClassUtils')
-                ? ClassUtils::getClass($data)
-                : get_class($data);
+        $className = class_exists('Doctrine\Common\Util\ClassUtils')
+            ? ClassUtils::getClass($data)
+            : get_class($data);
 
-            $type = $this->docu['class2type'][$className];
+        $type = $this->docu['class2type'][$className];
 
-            if (false === $include) {
-                $result = array();
+        if (false === $include) {
+            $result = array();
 
-                if (isset($this->docu['types'][$type]['properties']['@id'])) {
-                    $result['@id'] = $this->router->generate($this->docu['types'][$type]['properties']['@id']['route'], array('id' => $data->getId()));
-                    $result['@type'] = 'vocab:' . $type;
-                }
-
-                return $result;
+            if (isset($this->docu['types'][$type]['properties']['@id'])) {
+                $result['@id'] = $this->router->generate($this->docu['types'][$type]['properties']['@id']['route'], array('id' => $data->getId()));
+                $result['@type'] = 'vocab:' . $type;
             }
-
-            // TODO Throw exception if type is not documented ==> not exposed
-            $result = array('@context' => $this->router->generate('hydra_context', array('type' => $type)));
-
-            foreach ($this->docu['types'][$type]['properties'] as $property => $definition) {
-                if ($definition['writeonly']) {
-                    continue;
-                }
-
-                $value = $this->getValue($data, $definition);
-
-                if (isset($definition['route'])) {
-                    if (false === $value) {
-                        continue;
-                    }
-
-                    $reqVariables = $this->docu['routes'][$definition['route']]['variables'];
-                    $parameters = $this->docu['routes'][$definition['route']]['defaults'];
-
-                    if (isset($definition['route_variables'])) {
-                        foreach ($definition['route_variables'] as $var => $def) {
-                            if ($def[1]) { // is method?
-                                $parameters[$var] = $data->{$def[0]}();
-                            } else {
-                                $parameters[$var] = $data->{$def[0]};
-                            }
-                        }
-                    } else {
-                        if (is_array($value)) {
-                            $parameters += $value;
-                        } elseif (1 === count($reqVariables)) {
-                            if (is_scalar($value)) {
-                                $parameters[$reqVariables[0]] = $value;
-                            } elseif (is_object($value) && is_callable(array($value, 'getId'))) {
-                                // TODO Make the is_callable check more robust
-                                $parameters[$reqVariables[0]] = $value->getId();
-                            }
-                        }
-                    }
-
-                    // TODO Remove this hack!?
-                    if (in_array('id', $reqVariables) && !isset($parameters['id']) && is_callable(array($data, 'getId'))) {
-                        $parameters['id'] = $data->getId();
-                    }
-
-                    $route =  $this->router->generate($definition['route'], $parameters);
-
-                    if ('HydraCollection' === $definition['type']) {
-                        $result[$property] = array(
-                            '@id' => $route,
-                            '@type' => 'hydra:Collection'
-                        );
-                    } else {
-                        $result[$property] = $route;
-                    }
-
-                    // Add @type after @id
-                    if ('@id' === $property) {
-                        $result['@type'] = $type;
-                    }
-
-                    continue;
-                }
-
-                // TODO Recurse
-
-                if (is_object($value) && $this->docgen->hasNormalizer(get_class($value))) {
-                    $normalizer = $this->docgen->getNormalizer(get_class($value));
-                    $result[$property] = $normalizer->normalize($value);
-                } elseif (is_array($value) || ($value instanceof \ArrayAccess) || ($value instanceof \Travesable)) {
-                    $result[$property] = array();
-                    foreach ($value as $val) {
-                        $result[$property][] = $this->doSerialize($val);
-                    }
-                } else {
-                    $result[$property] = $value;
-                }
-            }
-
-            // if ($this->docu['types'][$type]['operations']) {
-            //     $result['hydra:operations'] = array();
-            //     foreach ($this->docu['types'][$type]['operations'] as $route) {
-            //         $def = $this->docu['routes'][$route];
-            //         $statusCodes = array();
-
-            //         if ($def['status_codes']) {
-            //             foreach ($def['status_codes'] as $code => $desc) {
-            //                 $statusCodes[] = array(
-            //                     'hydra:statusCode'  => $code,
-            //                     'hydra:description' => $desc,
-            //                 );
-            //             }
-            //         }
-
-            //         $expects = $this->docu['class2type'][$def['expect']];
-            //         $returns = $def['return']['type'];
-            //         if ('HydraCollection' === $returns) {
-            //             $returns = 'hydra:Collection';
-            //         } elseif ('array' === $returns) {
-            //             $returns = $this->docu['class2type'][$def['return']['type']['array_type']];
-            //         } else {
-            //             $returns = $this->docu['class2type'][$returns];
-            //         }
-
-            //         $result['hydra:operations'][] = array(
-            //             'hydra:method'      => $def['method'],
-            //             'hydra:title'       => $def['title'],
-            //             'hydra:description' => $def['description'],
-            //             // TODO Transform types to vocab references
-            //             'hydra:expects'    => $expects,
-            //             'hydra:returns'    => $returns,
-            //             'hydra:statusCodes' => $statusCodes
-            //         );
-            //     }
-            // }
 
             return $result;
         }
+
+        // TODO Throw exception if type is not documented ==> not exposed
+        $result = array('@context' => $this->router->generate('hydra_context', array('type' => $type)));
+
+        foreach ($this->docu['types'][$type]['properties'] as $property => $definition) {
+            if ($definition['writeonly']) {
+                continue;
+            }
+
+            $value = $this->getValue($data, $definition);
+
+            if (isset($definition['route'])) {
+                if (false === $value) {
+                    continue;
+                }
+
+                $reqVariables = $this->docu['routes'][$definition['route']]['variables'];
+                $parameters = $this->docu['routes'][$definition['route']]['defaults'];
+
+                if (isset($definition['route_variables'])) {
+                    foreach ($definition['route_variables'] as $var => $def) {
+                        if ($def[1]) { // is method?
+                            $parameters[$var] = $data->{$def[0]}();
+                        } else {
+                            $parameters[$var] = $data->{$def[0]};
+                        }
+                    }
+                } else {
+                    if (is_array($value)) {
+                        $parameters += $value;
+                    } elseif (1 === count($reqVariables)) {
+                        if (is_scalar($value)) {
+                            $parameters[$reqVariables[0]] = $value;
+                        } elseif (is_object($value) && is_callable(array($value, 'getId'))) {
+                            // TODO Make the is_callable check more robust
+                            $parameters[$reqVariables[0]] = $value->getId();
+                        }
+                    }
+                }
+
+                // TODO Remove this hack!?
+                if (in_array('id', $reqVariables) && !isset($parameters['id']) && is_callable(array($data, 'getId'))) {
+                    $parameters['id'] = $data->getId();
+                }
+
+                $route =  $this->router->generate($definition['route'], $parameters);
+
+                if ('HydraCollection' === $definition['type']) {
+                    $result[$property] = array(
+                        '@id' => $route,
+                        '@type' => 'hydra:Collection'
+                    );
+                } else {
+                    $result[$property] = $route;
+                }
+
+                // Add @type after @id
+                if ('@id' === $property) {
+                    $result['@type'] = $type;
+                }
+
+                continue;
+            }
+
+            // TODO Recurse
+
+            if (is_object($value) && $this->docgen->hasNormalizer(get_class($value))) {
+                $normalizer = $this->docgen->getNormalizer(get_class($value));
+                $result[$property] = $normalizer->normalize($value);
+            } elseif (is_array($value) || ($value instanceof \ArrayAccess) || ($value instanceof \Travesable)) {
+                $result[$property] = array();
+                foreach ($value as $val) {
+                    $result[$property][] = $this->doSerialize($val);
+                }
+            } else {
+                $result[$property] = $value;
+            }
+        }
+
+        // if ($this->docu['types'][$type]['operations']) {
+        //     $result['hydra:operations'] = array();
+        //     foreach ($this->docu['types'][$type]['operations'] as $route) {
+        //         $def = $this->docu['routes'][$route];
+        //         $statusCodes = array();
+
+        //         if ($def['status_codes']) {
+        //             foreach ($def['status_codes'] as $code => $desc) {
+        //                 $statusCodes[] = array(
+        //                     'hydra:statusCode'  => $code,
+        //                     'hydra:description' => $desc,
+        //                 );
+        //             }
+        //         }
+
+        //         $expects = $this->docu['class2type'][$def['expect']];
+        //         $returns = $def['return']['type'];
+        //         if ('HydraCollection' === $returns) {
+        //             $returns = 'hydra:Collection';
+        //         } elseif ('array' === $returns) {
+        //             $returns = $this->docu['class2type'][$def['return']['type']['array_type']];
+        //         } else {
+        //             $returns = $this->docu['class2type'][$returns];
+        //         }
+
+        //         $result['hydra:operations'][] = array(
+        //             'hydra:method'      => $def['method'],
+        //             'hydra:title'       => $def['title'],
+        //             'hydra:description' => $def['description'],
+        //             // TODO Transform types to vocab references
+        //             'hydra:expects'    => $expects,
+        //             'hydra:returns'    => $returns,
+        //             'hydra:statusCodes' => $statusCodes
+        //         );
+        //     }
+        // }
+
+        return $result;
     }
 
     /**
