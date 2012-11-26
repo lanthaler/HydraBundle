@@ -50,7 +50,7 @@ class JsonLdResponse extends Response
         // Only set the header when there is none
         // in order to not overwrite a custom definition.
         if (!$this->headers->has('Content-Type')) {
-            $this->headers->set('Content-Type', 'application/json');
+            $this->headers->set('Content-Type', 'application/ld+json');
         }
 
         $this->processData($data);
