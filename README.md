@@ -13,8 +13,9 @@ and evolvable RESTful APIs.
 ***WARNING: This is highly experimental stuff that isn't ready for
 production use. It is probably also the ugliest code I ever wrote.***
 
-To participate in the development of this specification please file bugs and
-issues in the issue tracker.
+To participate in the development, please file bugs and issues in the
+issue tracker or submit pull requests. If there's enough interest I'll
+create a dedicated mailing list in the future.
 
 You can find more information about Hydra on my homepage:
 http://www.markus-lanthaler.com/hydra
