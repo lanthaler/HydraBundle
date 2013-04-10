@@ -21,7 +21,7 @@ class Collection
     /**
      * @var array The members of this collection.
      *
-     * @Hydra\Expose(iri="http://www.w3.org/2000/01/rdf-schema#member")
+     * @Hydra\Expose(iri="http://purl.org/hydra/core#members")
      */
     private $members;
 
