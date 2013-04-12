@@ -1,0 +1,25 @@
+{
+    "name": "ml/hydra-bundle",
+    "type": "library",
+    "description": "JSON-LD Processor for PHP",
+    "keywords": [ "JSON-LD", "jsonld", "Hydra", "Web API", "Symfony", "Symfony2", "hypermedia", "REST" ],
+    "homepage": "http://www.markus-lanthaler.com/hydra/",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Markus Lanthaler",
+            "email": "mail@markus-lanthaler.com",
+            "homepage": "http://www.markus-lanthaler.com",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": ">=5.3.0",
+        "ext-json": "*",
+        "ml/json-ld": "@dev"
+    },
+    "autoload": {
+        "psr-0": { "ML\\HydraBundle": "" }
+    },
+    "target-dir": "ML/HydraBundle"
+}
