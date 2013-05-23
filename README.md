@@ -28,7 +28,7 @@ You can install this bundle by running
 
     composer require ml/hydra-bundle
 
-or adding the package to your composer.json file directly:
+or by adding the package to your composer.json file directly
 
 ```json
 {
@@ -51,7 +51,7 @@ $bundles = array(
 );
 ```
 
-and import the routes into your `routing.yml` file:
+and import the routes in your `routing.yml` file:
 
 ```yaml
 hydra:
