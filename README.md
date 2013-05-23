@@ -21,6 +21,46 @@ You can find more information about Hydra on my homepage:
 http://www.markus-lanthaler.com/hydra
 
 
+Installation
+------------
+
+You can install this bundle by running
+
+    composer require ml/hydra-bundle
+
+or adding the package to your composer.json file directly:
+
+```json
+{
+    "minimum-stability": "dev",
+    "require": {
+        "ml/hydra-bundle": "@dev"
+    }
+}
+```
+
+After you have installed the package, you just need to add the bundle
+to your `AppKernel.php` file:
+
+```php
+// in AppKernel::registerBundles()
+$bundles = array(
+    // ...
+    new ML\HydraBundle\HydraBundle(),
+    // ...
+);
+```
+
+and import the routes into your `routing.yml` file:
+
+```yaml
+hydra:
+    resource: "@HydraBundle/Controller/"
+    type:     annotation
+    prefix:   /
+```
+
+
 Credits
 ------------
 
