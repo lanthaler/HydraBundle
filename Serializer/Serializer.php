@@ -263,9 +263,9 @@ class Serializer implements SerializerInterface
         $typeName = $this->docu['class2type'][$type];
         $typeIri = $vocabBase . $typeName;
 
-        $document = JsonLD::getDocument($data);
+        $graph = JsonLD::getDocument($data)->getGraph();
 
-        $node = $document->getNodesByType($typeIri);
+        $node = $graph->getNodesByType($typeIri);
 
         if (1 !== count($node)) {
             throw new RuntimeException(
