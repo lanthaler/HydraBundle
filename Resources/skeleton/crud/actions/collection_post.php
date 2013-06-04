@@ -7,6 +7,11 @@
      * @Method("POST")
 {% endif %}
      *
+     * @Hydra\Operation(
+     *   status_codes = {
+     *     "201" = "If the {{ entity }} entity was created successfully."
+     * })
+     *
      * @Hydra\Operation(expect = "{{ namespace }}\Entity\{{ entity }}")
      *
      * @return {{ namespace }}\Entity\{{ entity }}

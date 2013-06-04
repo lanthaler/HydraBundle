@@ -7,11 +7,6 @@
      * @Method("DELETE")
 {% endif %}
      *
-     * @Hydra\Operation(
-     *   status_codes = {
-     *     "404" = "If the {{ entity }} entity wasn't found."
-     * })
-     *
      * @return void
      */
     public function deleteAction(Request $request, {{ entity }} $entity)
