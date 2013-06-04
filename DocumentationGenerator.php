@@ -37,7 +37,8 @@ class DocumentationGenerator
         'boolean' => 'http://www.w3.org/2001/XMLSchema#boolean',
         'bool' => 'http://www.w3.org/2001/XMLSchema#boolean',
         '@id' => 'http://www.w3.org/2001/XMLSchema#anyURI',
-        'void' => 'http://www.w3.org/2002/07/owl#Nothing'
+        'void' => 'http://www.w3.org/2002/07/owl#Nothing',
+        'mixed' => null
     );
 
     /**
@@ -135,35 +136,12 @@ class DocumentationGenerator
 
             $vocab[] = array(
                 '@id' => $this->getElementIri($vocabPrefix, $definition['iri']),
-                '@type' => 'rdfs:Class',
+                '@type' => 'hydra:Class',
                 'label' => $type,
                 'description' => $description,
-                'operations' => $this->getOperations4Vocab($documentation, $definition['operations'], $vocabPrefix),
+                'supportedOperations' => $this->getOperations4Vocab($documentation, $definition['operations'], $vocabPrefix),
+                'supportedProperties' => $this->getClassProperties4Vocab($documentation, $definition, $vocabPrefix),
             );
-
-            foreach ($definition['properties'] as $name => $property) {
-                if ('@id' === $name) {
-                    continue;
-                }
-
-                $description = $property['title'];
-                if ($description && $property['description']) {
-                    $description .= "\n\n";
-                }
-                $description .= $property['description'];
-
-                $vocab[] = array(
-                    '@id' => $this->getElementIri($vocabPrefix, $property['iri']),   // TODO Check this
-                    '@type' => 'rdfs:Property',
-                    'label' => $name,
-                    'description' => $description,
-                    'domain' => $this->getElementIri($vocabPrefix, $definition['iri']),
-                    'range' => $this->getRangeIri($vocabPrefix, $property['type'], $property['array_type']),
-                    'readonly' => $property['readonly'],
-                    'writeonly' => $property['writeonly'],
-                    'operations' => $this->getOperations4Vocab($documentation, $property['operations'], $vocabPrefix)
-                );
-            }
         }
 
         // TODO Remove this??
@@ -217,17 +195,21 @@ class DocumentationGenerator
             'description' => ''
         );
 
-
         $vocab = array(
             '@context' => array(
                 'vocab' => $vocabPrefix,
                 'hydra' => 'http://purl.org/hydra/core#',
+                'ApiDocumentation' => 'hydra:ApiDocumentation',
+                'property' => 'hydra:property',
                 'readonly' => 'hydra:readonly',
                 'writeonly' => 'hydra:writeonly',
-                'operations' => 'hydra:operations',
+                'supportedClasses' => 'hydra:supportedClasses',
+                'supportedProperties' => 'hydra:supportedProperties',
+                'supportedOperations' => 'hydra:supportedOperations',
+                'method' => 'hydra:method',
                 'expects' =>  array('@id' => 'hydra:expects', '@type' => '@id'),
                 'returns' =>  array('@id' => 'hydra:returns', '@type' => '@id'),
-                'status_codes' => 'hydra:statusCodes',
+                'statusCodes' => 'hydra:statusCodes',
                 'code' => 'hydra:statusCode',
                 'rdfs' => 'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
                 'label' => 'rdfs:label',
@@ -235,15 +217,51 @@ class DocumentationGenerator
                 'domain' => array('@id' => 'rdfs:domain', '@type' => '@id'),
                 'range' =>  array('@id' => 'rdfs:range', '@type' => '@id'),
             ),
-            '@graph' => $vocab
+            '@id' => $this->router->generate('hydra_vocab', array(), true),
+            '@type' => 'ApiDocumentation',
+            'supportedClasses' => $vocab
         );
 
         return $vocab;
     }
 
+    private function getClassProperties4Vocab($documentation, $definition, $vocabPrefix)
+    {
+        $result = array();
+
+        foreach ($definition['properties'] as $name => $property) {
+            if ('@id' === $name) {
+                continue;
+            }
+
+            $description = $property['title'];
+            if ($description && $property['description']) {
+                $description .= "\n\n";
+            }
+            $description .= $property['description'];
+
+            $result[] = array(
+                'property' => array(
+                    '@id' => $this->getElementIri($vocabPrefix, $property['iri']),   // TODO Check this
+                    '@type' => 'rdfs:Property',
+                    'label' => $name,
+                    'description' => $description,
+                    'domain' => $this->getElementIri($vocabPrefix, $definition['iri']),
+                    'range' => $this->getRangeIri($vocabPrefix, $property['type'], $property['array_type']),
+                    'supportedOperations' => $this->getOperations4Vocab($documentation, $property['operations'], $vocabPrefix)
+                ),
+                'readonly' => $property['readonly'],
+                'writeonly' => $property['writeonly'],
+            );
+        }
+
+        return $result;
+    }
+
     private function getOperations4Vocab($documentation, $operations, $vocabPrefix)
     {
         $result = array();
+
         foreach ($operations as $operation) {
             $statusCodes = array();
             foreach ($documentation['routes'][$operation]['status_codes'] as $code => $description) {
@@ -271,7 +289,7 @@ class DocumentationGenerator
                 'description' => $documentation['routes'][$operation]['description'],
                 'expects' => $expects,
                 'returns' => $returns,
-                'status_codes' => $statusCodes
+                'statusCodes' => $statusCodes
             );
         }
 
@@ -345,7 +363,7 @@ class DocumentationGenerator
             $type = $arrayType;
         }
 
-        if (isset(self::$typeMap[$type])) {
+        if (array_key_exists($type, self::$typeMap)) {
             return self::$typeMap[$type];
         }
 
@@ -628,6 +646,11 @@ class DocumentationGenerator
 
                 // TODO Check that the IRI template can be filled!?
                 $definition['route'] = $annotation->route;
+
+                // If there's a route and the type is a primitive type or null, set it to @id
+                if ((null === $definition['type']) || ($this->isPrimitiveType($definition['type']))) {
+                    $definition['type'] = '@id';
+                }
             } else {
                 $definition['route'] = null;
             }
@@ -746,7 +769,7 @@ class DocumentationGenerator
                 //     throw new \Exception(sprintf('"%s" in "%s" specifies operations but it\'s return type is "%s" instead of array or ' . self::HYDRA_COLLECTION,
                 //         $element->name, $element->name, $definition['type']));
                 // } else {
-                    $definition['type'] = '@id';
+                    //$definition['type'] = '@id';
                     // TODO Check that the IRI template can be filled!?
                     if (false === isset($definition['route'])) {
                         $definition['route'] = $operations[0];
@@ -918,7 +941,7 @@ class DocumentationGenerator
      */
     private static function isPrimitiveType($type)
     {
-        return in_array($type, array('array', 'string', 'float', 'double', 'boolean', 'bool', 'integer', '@id', 'void'));
+        return in_array($type, array('array', 'string', 'float', 'double', 'boolean', 'bool', 'integer', '@id', 'void', 'mixed'));
     }
 
     /**
