@@ -10,7 +10,7 @@
 namespace ML\HydraBundle\Serializer;
 
 use Symfony\Component\Serializer\SerializerInterface;
-use Symfony\Component\Form\Util\PropertyPath;
+use Symfony\Component\PropertyAccess\PropertyAccess;
 use Symfony\Component\Routing\RouterInterface;
 use Symfony\Component\Serializer\Exception\RuntimeException;
 use Symfony\Component\Serializer\Exception\UnexpectedValueException;
@@ -42,12 +42,13 @@ class Serializer implements SerializerInterface
     /**
      * Serializes data in the appropriate format
      *
-     * @param mixed  $data   any data
-     * @param string $format format name
+     * @param mixed  $data    any data
+     * @param string $format  format name
+     * @param array  $context options normalizers/encoders have access to
      *
      * @return string
      */
-    public function serialize($data, $format)
+    public function serialize($data, $format, array $context = array())
     {
         if ('jsonld' !== $format) {
             throw new UnexpectedValueException('Serialization for the format ' . $format . ' is not supported');
@@ -220,10 +221,11 @@ class Serializer implements SerializerInterface
      * @param mixed  $data
      * @param string $type
      * @param string $format
+     * @param array  $context
      *
      * @return object
      */
-    public function deserialize($data, $type, $format)
+    public function deserialize($data, $type, $format, array $context = array())
     {
         if ('jsonld' !== $format) {
             throw new UnexpectedValueException('Deserialization for the format ' . $format . ' is not supported');
@@ -331,8 +333,8 @@ class Serializer implements SerializerInterface
 
             // TODO Recurse!?
 
-            $propertyPath = new PropertyPath($definition['element']);
-            $propertyPath->setValue($entity, $node->getProperty($vocabBase . $definition['iri']));  // TODO Fix IRI construction
+            $accessor = PropertyAccess::createPropertyAccessor();
+            $accessor->setValue($entity, $definition['element'], $node->getProperty($vocabBase . $definition['iri']));  // TODO Fix IRI construction
 
             //$this->setValue($data, $definition, $node->getProperty($vocabBase . $definition['iri_fragment']));
 
