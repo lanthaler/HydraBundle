@@ -211,7 +211,8 @@ class DocumentationGenerator
                 'returns' =>  array('@id' => 'hydra:returns', '@type' => '@id'),
                 'statusCodes' => 'hydra:statusCodes',
                 'code' => 'hydra:statusCode',
-                'rdfs' => 'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
+                'rdf' => 'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
+                'rdfs' => 'http://www.w3.org/2000/01/rdf-schema#',
                 'label' => 'rdfs:label',
                 'description' => 'rdfs:comment',
                 'domain' => array('@id' => 'rdfs:domain', '@type' => '@id'),
@@ -243,7 +244,7 @@ class DocumentationGenerator
             $result[] = array(
                 'property' => array(
                     '@id' => $this->getElementIri($vocabPrefix, $property['iri']),   // TODO Check this
-                    '@type' => 'rdfs:Property',
+                    '@type' => 'rdf:Property',
                     'label' => $name,
                     'description' => $description,
                     'domain' => $this->getElementIri($vocabPrefix, $definition['iri']),
