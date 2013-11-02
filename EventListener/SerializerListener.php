@@ -15,8 +15,8 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Serializer\SerializerInterface;
 use Doctrine\Common\Util\ClassUtils;
 use ML\HydraBundle\JsonLdResponse;
-use ML\HydraBundle\DocumentationGenerator;
-use ML\HydraBundle\Collection\Collection;
+use ML\HydraBundle\HydraApi;
+use ML\HydraBundle\Entity\Collection;
 
 /**
  * The SerializerListener class makes sure that the data returned by a
@@ -27,7 +27,7 @@ use ML\HydraBundle\Collection\Collection;
 class SerializerListener
 {
     /**
-     * @var ML\HydraBundle\DocumentationGenerator
+     * @var ML\HydraBundle\HydraApi
      */
     protected $hydra;
 
@@ -36,22 +36,24 @@ class SerializerListener
      */
     protected $serializer;
 
-
     /**
-     * Constructor.
+     * Constructor
      *
-     * @param DocumentationGenerator $documentationGenerator The Hydra documentation generator
-     * @param SerializerInterface $serializer The serializer
+     * @param HydraApi            $hydraApi    The Hydra API.
+     * @param SerializerInterface $serializer The serializer.
      */
-    public function __construct(DocumentationGenerator $documentationGenerator, SerializerInterface $serializer)
+    public function __construct(HydraApi $hydraApi, SerializerInterface $serializer, $annotationReader)
     {
-        $this->hydra = $documentationGenerator;
+        $this->hydraApi = $hydraApi;
         $this->serializer = $serializer;
+
+        // FIXME The annotation reader is only necessary for the isHydraOperation() method which should be moved elsewhere
+        $this->annotationReader = $annotationReader;
     }
 
     /**
-     * Guesses the template name to render and its variables and adds them to
-     * the request object.
+     * Marks request that whose controller return value should be serialized
+     * by the Hydra serializer
      *
      * @param FilterControllerEvent $event A FilterControllerEvent instance
      */
@@ -65,15 +67,10 @@ class SerializerListener
 
         $method = new \ReflectionMethod($controller[0], $controller[1]);
 
-        if ($this->hydra->isOperation($method)) {
+        if ($this->isHydraOperation($method)) {
             $request->attributes->set('__hydra_serialize', true);
 
-            // TODO Add support for serialization groups
-
-            $type = $this->hydra->getType($method);
-            if (null !== $type['type']) {
-                $request->attributes->set('__hydra_return_type', $type);
-            }
+            // TODO Add support for serialization groups and other serialization formats
         }
     }
 
@@ -104,5 +101,29 @@ class SerializerListener
         $serialized = $this->serializer->serialize($result, 'jsonld');
 
         $event->setResponse(new JsonLdResponse($serialized));
+    }
+
+    /**
+     * Does the specified method represent a Hydra Operation?
+     *
+     * This information is used to determine whether it's return value
+     * should be serialized by the Hydra serializer.
+     *
+     * Currently annotations are the only way to specify a method to be a
+     * Hydra operation.
+     *
+     * @param \ReflectionMethod $method The controller method.
+     *
+     * @return boolean True if the method represents a Hydra Operation,
+     *                 false otherwise
+     */
+    private function isHydraOperation(\ReflectionMethod $method)
+    {
+        $annotation = $this->annotationReader->getMethodAnnotation(
+            $method,
+            'ML\HydraBundle\Mapping\Operation'
+        );
+
+        return null !== $annotation;
     }
 }

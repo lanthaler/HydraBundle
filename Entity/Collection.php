@@ -1,6 +1,6 @@
 <?php
 
-namespace ML\HydraBundle\Collection;
+namespace ML\HydraBundle\Entity;
 
 use ML\HydraBundle\Mapping as Hydra;
 
@@ -8,6 +8,8 @@ use ML\HydraBundle\Mapping as Hydra;
  * A generic collection keeping references to a number of resources.
  *
  * @Hydra\Expose(iri="http://purl.org/hydra/core#Collection")
+ *
+ * @author Markus Lanthaler <mail@markus-lanthaler.com>
  */
 class Collection
 {

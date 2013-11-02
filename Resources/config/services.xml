@@ -5,35 +5,82 @@
     xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
 
     <parameters>
+        <parameter key="hydra.api.class">ML\HydraBundle\HydraApi</parameter>
         <parameter key="hydra.documentation_generator.class">ML\HydraBundle\DocumentationGenerator</parameter>
         <parameter key="hydra.serializer.class">ML\HydraBundle\Serializer\Serializer</parameter>
         <parameter key="hydra.view.listener.class">ML\HydraBundle\EventListener\SerializerListener</parameter>
+
+        <parameter key="hydra.metadata_factory.class">ML\HydraBundle\Mapping\ClassMetadataFactory</parameter>
+
+        <parameter key="hydra.metadata.annotation.class">ML\HydraBundle\Mapping\Driver\AnnotationDriver</parameter>
+        <parameter key="hydra.metadata.driver_chain.class">ML\HydraBundle\Mapping\Driver\DriverChain</parameter>
+
+        <parameter key="hydra.metadata.xml.class">Doctrine\ORM\Mapping\Driver\SimplifiedXmlDriver</parameter>
+
+        <parameter key="hydra.cache.array.class">Doctrine\Common\Cache\ArrayCache</parameter>
+        <parameter key="hydra.cache.file.class">Doctrine\Common\Cache\FilesystemCache</parameter>
+        <parameter key="hydra.cache.apc.class">Doctrine\Common\Cache\ApcCache</parameter>
+        <parameter key="hydra.cache.memcache.class">Doctrine\Common\Cache\MemcacheCache</parameter>
+        <parameter key="hydra.cache.memcache_host">localhost</parameter>
+        <parameter key="hydra.cache.memcache_port">11211</parameter>
+        <parameter key="hydra.cache.memcache_instance.class">Memcache</parameter>
+        <parameter key="hydra.cache.memcached.class">Doctrine\Common\Cache\MemcachedCache</parameter>
+        <parameter key="hydra.cache.memcached_host">localhost</parameter>
+        <parameter key="hydra.cache.memcached_port">11211</parameter>
+        <parameter key="hydra.cache.memcached_instance.class">Memcached</parameter>
+        <parameter key="hydra.cache.redis.class">Doctrine\Common\Cache\RedisCache</parameter>
+        <parameter key="hydra.cache.redis_host">localhost</parameter>
+        <parameter key="hydra.cache.redis_port">6379</parameter>
+        <parameter key="hydra.cache.redis_instance.class">Redis</parameter>
+        <parameter key="hydra.cache.xcache.class">Doctrine\Common\Cache\XcacheCache</parameter>
+        <parameter key="hydra.cache.wincache.class">Doctrine\Common\Cache\WinCacheCache</parameter>
+        <parameter key="hydra.cache.zenddata.class">Doctrine\Common\Cache\ZendDataCache</parameter>
+
+        <parameter key="hydra.naming_strategy.default.class">ML\HydraBundle\Mapping\DefaultNamingStrategy</parameter>
     </parameters>
 
     <services>
+        <service id="hydra.metadata.annotation_reader" alias="annotation_reader" public="false" />
+
+        <service id="hydra.api" class="%hydra.api.class%">
+            <argument type="service" id="router" />
+            <argument type="service" id="hydra.metadata_factory" />
+            <argument type="collection" />
+        </service>
+
+        <service id="hydra.metadata_factory" class="%hydra.metadata_factory.class%">
+            <argument type="service" id="hydra.metadata_driver" />
+            <argument type="service" id="hydra.metadata_cache" />
+            <argument type="service" id="hydra.naming_strategy" />
+        </service>
+
         <service id="hydra.documentation_generator" class="%hydra.documentation_generator.class%">
-            <argument type="service" id="service_container"/>
+            <argument type="service" id="service_container" />
+            <argument type="service" id="hydra.metadata_factory" />
             <argument type="service" id="router" />
             <argument type="service" id="annotation_reader" />
             <argument type="collection" />
         </service>
 
         <service id="hydra.serializer" class="%hydra.serializer.class%">
-            <argument type="service" id="hydra.documentation_generator" />
+            <argument type="service" id="hydra.api" />
             <argument type="service" id="router" />
         </service>
 
         <service id="hydra.view.listener" class="%hydra.view.listener.class%">
+            <argument type="service" id="hydra.api" />
+            <argument type="service" id="hydra.serializer" />
+            <argument type="service" id="hydra.metadata.annotation_reader" />
             <tag name="kernel.event_listener" event="kernel.controller" method="onKernelController" />
             <tag name="kernel.event_listener" event="kernel.view" method="onKernelView" />
-            <argument type="service" id="hydra.documentation_generator" />
-            <argument type="service" id="hydra.serializer" />
         </service>
 
         <!-- Core datatype normalizers -->
         <service id="hydra.datatype_normalizer.datetime" class="ML\HydraBundle\DatatypeNormalizer\DateTimeNormalizer">
             <tag name="hydra.datatype_normalizer" class="DateTime" />
         </service>
+
+        <service id="hydra.naming_strategy.default" class="%hydra.naming_strategy.default.class%" public="false" />
     </services>
 
 </container>

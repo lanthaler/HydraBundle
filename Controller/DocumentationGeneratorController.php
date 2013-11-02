@@ -16,6 +16,8 @@ use ML\HydraBundle\JsonLdResponse;
 
 /**
  * The documentation generator controller
+ *
+ * @author Markus Lanthaler <mail@markus-lanthaler.com>
  */
 class DocumentationGeneratorController extends Controller
 {
@@ -27,7 +29,7 @@ class DocumentationGeneratorController extends Controller
      */
     public function indexAction()
     {
-        $documentation = $this->get('hydra.documentation_generator')->getDocumentation();
+        $documentation = $this->get('hydra.api')->getDocumentation();
 
         return $documentation;
     }
@@ -40,7 +42,7 @@ class DocumentationGeneratorController extends Controller
      */
     public function vardumpAction()
     {
-        $documentation = $this->get('hydra.documentation_generator')->getDocumentation();
+        $documentation = $this->get('hydra.api')->getDocumentation();
 
         ini_set('xdebug.var_display_max_depth', '10');
         die(var_dump($documentation));
@@ -54,10 +56,10 @@ class DocumentationGeneratorController extends Controller
      */
     public function vocabularyAction()
     {
-        $hydra = $this->get('hydra.documentation_generator');
-        $vocab = $hydra->getVocabulary();
+        $hydra = $this->get('hydra.api');
+        $documentation = $hydra->getDocumentation();
 
-        return new JsonLdResponse($vocab);
+        return new JsonLdResponse($documentation);
     }
 
     /**
@@ -67,7 +69,7 @@ class DocumentationGeneratorController extends Controller
      */
     public function getContextAction($type)
     {
-        $context = $this->get('hydra.documentation_generator')->getContext($type);
+        $context = $this->get('hydra.api')->getContext($type);
 
         if (null === $context) {
             $this->createNotFoundException();

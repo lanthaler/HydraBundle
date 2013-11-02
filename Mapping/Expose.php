@@ -19,10 +19,12 @@ namespace ML\HydraBundle\Mapping;
  * IRI (fragment) with the "iri" parameter. If the value of "iri" contains
  * a colon, it is assumed to represent the full, absolute IRI, otherwise it
  * is interpreted as IRI fragment which is appended to the vocabulary's IRI.
- * The two parameters "readonly" and "writeonly" specify whether the element
- * is just readable or just writable.
+ * The three parameters "required", "readonly" and "writeonly" are used only
+ * for properties.
  *
  * @Annotation
+ *
+ * @author Markus Lanthaler <mail@markus-lanthaler.com>
  */
 class Expose
 {
@@ -37,12 +39,40 @@ class Expose
     public $iri = null;
 
     /**
-     * @var bool
+     * @var boolean
      */
-    public $readonly = false;
+    public $required;
 
     /**
-     * @var bool
+     * @var boolean
      */
-    public $writeonly = false;
+    public $readonly;
+
+    /**
+     * @var boolean
+     */
+    public $writeonly;
+
+    /**
+     * Get the IRI (fragment)
+     *
+     * @return string The IRI fragment
+     */
+    public function getIri()
+    {
+        if (null === $this->iri) {
+            return null;
+        }
+
+        // Is it an absolute IRI?
+        if (false !== strpos($this->iri, ':')) {
+            return $this->iri;
+        }
+
+        if ('#' === $this->iri[0]) {
+            return substr($this->iri, 1);
+        }
+
+        return $this->iri;
+    }
 }
