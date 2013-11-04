@@ -11,13 +11,15 @@ concept to show how Hydra can simplify the implementation of interoperable
 and evolvable RESTful APIs.
 
 ***WARNING: This is highly experimental stuff that isn't ready for
-production use. It is probably also the ugliest code I ever wrote.***
+production use yet.***
 
-To participate in the development, please file bugs and issues in the
-issue tracker or submit pull requests. If there's enough interest I'll
-create a dedicated mailing list in the future.
+To participate in the development of this bundle, please file bugs and
+issues in the issue tracker or submit pull requests. If you have questions
+regarding Hydra in general, join the
+[Hydra W3C Community Group](http://bit.ly/HydraCG).
 
-You can find more information about Hydra on my homepage:
+You can find an online demo of this bundle as well as more information about
+Hydra on my homepage:
 http://www.markus-lanthaler.com/hydra
 
 
@@ -64,7 +66,9 @@ hydra:
 Credits
 ------------
 
-The code of this bundle is heavily inspired by Sensio's
-[SensioGeneratorBundle](https://github.com/sensio/SensioGeneratorBundle) and
-Nelmio's [NelmioApiDocBundle](https://github.com/nelmio/NelmioApiDocBundle).
-Parts of the source code were copied directly from those two bundles.
+This bundle heavily uses the
+[Doctrine Common project](http://www.doctrine-project.org/projects/common.html)
+and is inspired by its
+[object relational mapper](http://www.doctrine-project.org/projects/orm.html).
+The code generation is based on Sensio's
+[SensioGeneratorBundle](https://github.com/sensio/SensioGeneratorBundle).
