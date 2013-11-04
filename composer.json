@@ -19,6 +19,7 @@
         "ext-json": "*",
         "ml/json-ld": "@dev",
         "doctrine/common": "~2.3",
+        "sensio/generator-bundle": "2.3.*",
         "symfony/property-access": "~2.3"
     },
     "autoload": {
