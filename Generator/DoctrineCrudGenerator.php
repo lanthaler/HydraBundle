@@ -11,6 +11,7 @@ namespace ML\HydraBundle\Generator;
 
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpKernel\Bundle\BundleInterface;
+use Sensio\Bundle\GeneratorBundle\Generator\DoctrineCrudGenerator as SensioDoctrineCrudGenerator;
 use Doctrine\ORM\Mapping\ClassMetadataInfo;
 
 /**
@@ -18,8 +19,7 @@ use Doctrine\ORM\Mapping\ClassMetadataInfo;
  *
  * @author Markus Lanthaler <mail@markus-lanthaler.com>
  */
-class DoctrineCrudGenerator extends
-    \Sensio\Bundle\GeneratorBundle\Generator\DoctrineCrudGenerator
+class DoctrineCrudGenerator extends SensioDoctrineCrudGenerator
 {
     /**
      * Generate the CRUD controller.
@@ -33,11 +33,27 @@ class DoctrineCrudGenerator extends
      *
      * @throws \RuntimeException
      */
-    public function generate(BundleInterface $bundle, $entity, ClassMetadataInfo $metadata, $format, $routePrefix, $needWriteActions)
+    public function generate(BundleInterface $bundle, $entity, ClassMetadataInfo $metadata, $format, $routePrefix, $needWriteActions, $forceOverwrite)
     {
+        // Remove trailing "/"
         if ('/' === $routePrefix[strlen($routePrefix) - 1]) {
             $routePrefix = substr($routePrefix, 0, -1);
         }
+
+        $this->routePrefix = $routePrefix;
+
+        // Convert camel-cased class name to underscores
+        $this->routeNamePrefix = strtolower(preg_replace_callback(
+            '/([a-z0-9])([A-Z])/',
+            function ($match) {
+                return $match[1] . '_' . strtolower($match[2]);
+            },
+            substr($entity, strrpos($entity, '\\'))
+        ));
+
+        $this->actions = $needWriteActions
+            ? array('collection_get', 'collection_post', 'entity_get', 'entity_put', 'entity_delete')
+            : array('collection_get', 'entity_get');
 
         if (count($metadata->identifier) > 1) {
             throw new \RuntimeException('The CRUD generator does not support entity classes with multiple primary keys.');
@@ -47,84 +63,12 @@ class DoctrineCrudGenerator extends
             throw new \RuntimeException('The CRUD generator expects the entity object has a primary key field named "id" with a getId() method.');
         }
 
-        $parts = explode('\\', $entity);
-
         $this->entity   = $entity;
-        $this->entityClass = array_pop($parts);
-        $this->entityNamespace = implode('\\', $parts);
         $this->bundle   = $bundle;
         $this->metadata = $metadata;
-        $this->format    = 'annotation';
-        $this->routePrefix = $routePrefix;
+        $this->format   = 'annotation';
 
-        // Convert camel-cased class name to underscores
-        $this->routeNamePrefix = strtolower(preg_replace_callback(
-            '/([a-z0-9])([A-Z])/',
-            function ($match) {
-                return $match[1] . '_' . strtolower($match[2]);
-            },
-            $this->entityClass));
-
-        $this->actions = $needWriteActions ?
-            array('collection_get', 'collection_post', 'entity_get', 'entity_put', 'entity_delete')
-            : array('collection_get', 'entity_get');
-
-        $this->generateControllerClass();
-
+        $this->generateControllerClass($forceOverwrite);
         $this->generateTestClass();
-    }
-
-    /**
-     * Generates the controller class only.
-     *
-     */
-    private function generateControllerClass()
-    {
-        $dir = $this->bundle->getPath();
-
-        $target = sprintf(
-            '%s/Controller/%s/%sController.php',
-            $dir,
-            str_replace('\\', '/', $this->entityNamespace),
-            $this->entityClass
-        );
-
-        if (file_exists($target)) {
-            throw new \RuntimeException('Unable to generate the controller as it already exists.');
-        }
-
-        $this->renderFile($this->skeletonDir, 'controller.php', $target, array(
-            'actions'           => $this->actions,
-            'route_prefix'      => $this->routePrefix,
-            'route_name_prefix' => $this->routeNamePrefix,
-            'dir'               => $this->skeletonDir,
-            'bundle'            => $this->bundle->getName(),
-            'entity'            => $this->entity,
-            'entity_class'      => $this->entityClass,
-            'namespace'         => $this->bundle->getNamespace(),
-            'entity_namespace'  => $this->entityNamespace,
-            'format'            => $this->format,
-        ));
-    }
-
-    /**
-     * Generates the functional test class only.
-     *
-     */
-    private function generateTestClass()
-    {
-        $dir    = $this->bundle->getPath() .'/Tests/Controller';
-        $target = $dir .'/'. str_replace('\\', '/', $this->entityNamespace).'/'. $this->entityClass .'ControllerTest.php';
-
-        $this->renderFile($this->skeletonDir, 'tests/test.php', $target, array(
-            'route_prefix'      => $this->routePrefix,
-            'route_name_prefix' => $this->routeNamePrefix,
-            'entity'            => $this->entity,
-            'entity_class'      => $this->entityClass,
-            'namespace'         => $this->bundle->getNamespace(),
-            'entity_namespace'  => $this->entityNamespace,
-            'actions'           => $this->actions,
-            'dir'               => $this->skeletonDir,
-        ));
     }
 }

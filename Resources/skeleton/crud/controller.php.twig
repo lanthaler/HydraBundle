@@ -27,22 +27,22 @@ class {{ entity_class }}Controller extends HydraController
 {
 
     {%- if 'collection_get' in actions %}
-        {%- include 'actions/collection_get.php' %}
+        {%- include 'crud/actions/collection_get.php.twig' %}
     {%- endif %}
 
     {%- if 'collection_post' in actions %}
-        {%- include 'actions/collection_post.php' %}
+        {%- include 'crud/actions/collection_post.php.twig' %}
     {%- endif %}
 
     {%- if 'entity_get' in actions %}
-        {%- include 'actions/entity_get.php' %}
+        {%- include 'crud/actions/entity_get.php.twig' %}
     {%- endif %}
 
     {%- if 'entity_put' in actions %}
-        {%- include 'actions/entity_put.php' %}
+        {%- include 'crud/actions/entity_put.php.twig' %}
     {%- endif %}
 
     {%- if 'entity_delete' in actions %}
-        {%- include 'actions/entity_delete.php' %}
+        {%- include 'crud/actions/entity_delete.php.twig' %}
     {%- endif %}
 }

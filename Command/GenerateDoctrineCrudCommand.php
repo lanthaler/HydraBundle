@@ -9,17 +9,15 @@
 
 namespace ML\HydraBundle\Command;
 
+use Symfony\Component\Finder\Finder;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Output\Output;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\HttpKernel\Bundle\BundleInterface;
 use Sensio\Bundle\GeneratorBundle\Command\GenerateDoctrineCrudCommand as SensioCrudCommand;
 use Sensio\Bundle\GeneratorBundle\Command\Validators;
-use Sensio\Bundle\GeneratorBundle\Generator\DoctrineFormGenerator;
-use Sensio\Bundle\GeneratorBundle\Generator\DoctrineCrudGenerator as SensioDoctrineCrudGenerator;
-use Sensio\Bundle\GeneratorBundle\Command\Helper\DialogHelper;
-use Sensio\Bundle\GeneratorBundle\Manipulator\RoutingManipulator;
 use ML\HydraBundle\Generator\DoctrineCrudGenerator;
 
 /**
@@ -92,7 +90,7 @@ EOT
         $metadata    = $this->getEntityMetadata($entityClass);
         $bundle      = $this->getContainer()->get('kernel')->getBundle($bundle);
 
-        $generator = $this->getGenerator();
+        $generator = $this->getGenerator($bundle);
         $generator->generate($bundle, $entity, $metadata[0], $format, $prefix, $withWrite, $forceOverwrite);
 
         $output->writeln('Generating the CRUD code: <info>OK</info>');
@@ -121,7 +119,34 @@ EOT
             '',
         ));
 
-        $entity = $dialog->askAndValidate($output, $dialog->getQuestion('The Entity shortcut name', $input->getOption('entity')), array('Sensio\Bundle\GeneratorBundle\Command\Validators', 'validateEntityName'), false, $input->getOption('entity'));
+        $entityNames = array();
+        $srcDir = realpath($this->getContainer()->get('kernel')->getRootDir() . '/../src/') . DIRECTORY_SEPARATOR;
+
+        foreach ($this->getContainer()->get('kernel')->getBundles() as $bundleName => $bundle) {
+            $finder = Finder::create();
+            $entityDir = $bundle->getPath() . DIRECTORY_SEPARATOR . 'Entity' . DIRECTORY_SEPARATOR;
+            if (file_exists($entityDir) && (0 === strncmp($entityDir, $srcDir, strlen($srcDir)))) {
+                $finder
+                    ->files()
+                    ->in($entityDir)
+                    ->notName('*Repository')
+                    ->getIterator()
+                ;
+
+                foreach ($finder as $file) {
+                    $entityNames[] = sprintf('%s:%s', $bundleName, str_replace(array($entityDir, '.php'), '', $file->getRealPath()));
+                }
+            }
+        }
+
+        $entity = $dialog->askAndValidate(
+            $output,
+            $dialog->getQuestion('The Entity shortcut name', $input->getOption('entity')),
+            array('Sensio\Bundle\GeneratorBundle\Command\Validators', 'validateEntityName'),
+            false,
+            $input->getOption('entity'), $entityNames
+        );
+
         $input->setOption('entity', $entity);
         list($bundle, $entity) = $this->parseShortcutNotation($entity);
 
@@ -162,12 +187,26 @@ EOT
         ));
     }
 
-    protected function getGenerator($bundle = null)
+    protected function createGenerator($bundle = null)
     {
-        if (null === $this->generator) {
-            $this->generator = new DoctrineCrudGenerator($this->getContainer()->get('filesystem'), __DIR__.'/../Resources/skeleton/crud');
+        return new DoctrineCrudGenerator($this->getContainer()->get('filesystem'));
+    }
+
+    protected function getSkeletonDirs(BundleInterface $bundle = null)
+    {
+        $skeletonDirs = array();
+
+        if (isset($bundle) && is_dir($dir = $bundle->getPath().'/Resources/HydraBundle/skeleton')) {
+            $skeletonDirs[] = $dir;
         }
 
-        return $this->generator;
+        if (is_dir($dir = $this->getContainer()->get('kernel')->getRootdir().'/Resources/HydraBundle/skeleton')) {
+            $skeletonDirs[] = $dir;
+        }
+
+        $skeletonDirs[] = __DIR__.'/../Resources/skeleton';
+        $skeletonDirs[] = __DIR__.'/../Resources';
+
+        return $skeletonDirs;
     }
 }
