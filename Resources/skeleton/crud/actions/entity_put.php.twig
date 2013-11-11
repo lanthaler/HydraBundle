@@ -1,6 +1,6 @@
 
     /**
-     * Replaces an existing {{ entity }}
+     * Replaces an existing {{ entity }} entity
      *
 {% if 'annotation' == format %}
      * @Route("/{id}", name="{{ route_name_prefix }}_replace")
@@ -10,7 +10,7 @@
      * @Hydra\Operation(
      *   expect = "{{ namespace }}\Entity\{{ entity }}",
      *   status_codes = {
-     *     "404" = "If the {{ entity }} wasn't found."
+     *     "404" = "If the {{ entity }} entity wasn't found."
      *   }
      * )
      *

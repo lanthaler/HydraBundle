@@ -1,11 +1,13 @@
 
     /**
-     * Retrieves a {{ entity }}
+     * Retrieves a {{ entity }} entity
      *
 {% if 'annotation' == format %}
      * @Route("/{id}", name="{{ route_name_prefix }}_retrieve")
      * @Method("GET")
 {% endif %}
+     *
+     * @Hydra\Operation()
      *
      * @return {{ namespace }}\Entity\{{ entity }}
      */
