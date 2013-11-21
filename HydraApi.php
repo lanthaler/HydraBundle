@@ -308,7 +308,9 @@ class HydraApi
                     ? $property->getIri()
                     : array(
                         '@id' => 'vocab:' . $property->getIri(),
-                        '@type' => 'rdf:Property',
+                        '@type' => ($property->getRoute())
+                            ? 'hydra:Link'
+                            : 'rdf:Property',
                         'label' => $property->getTitle(),
                         'description' => $property->getDescription(),
                         'domain' => $propertyDomain,
