@@ -297,7 +297,12 @@ class Serializer implements SerializerInterface
                 ? $property->getIri()
                 : $vocabPrefix . $property->getIri();
 
-            $property->setValue($entity, $node->getProperty($propertyIri));  // TODO Fix IRI construction
+            $value = $node->getProperty($propertyIri);
+            if ($value instanceof \ML\JsonLD\Value) {
+                $value = $value->getValue();
+            }
+
+            $property->setValue($entity, $value);  // TODO Fix IRI construction
 
             // if (is_array($value) || ($value instanceof \ArrayAccess) || ($value instanceof \Travesable)) {
             //     $result[$property] = array();
