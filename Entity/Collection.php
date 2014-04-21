@@ -7,7 +7,7 @@ use ML\HydraBundle\Mapping as Hydra;
 /**
  * A generic collection keeping references to a number of resources.
  *
- * @Hydra\Expose(iri="http://purl.org/hydra/core#Collection")
+ * @Hydra\Expose(iri="http://www.w3.org/ns/hydra/core#Collection")
  *
  * @author Markus Lanthaler <mail@markus-lanthaler.com>
  */
@@ -23,7 +23,7 @@ class Collection
     /**
      * @var array The members of this collection.
      *
-     * @Hydra\Expose(iri="http://purl.org/hydra/core#members")
+     * @Hydra\Expose(iri="http://www.w3.org/ns/hydra/core#members")
      */
     private $members;
 

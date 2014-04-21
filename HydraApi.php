@@ -155,7 +155,7 @@ class HydraApi
         }
 
         $context = array(
-            'hydra' => 'http://purl.org/hydra/core#',
+            'hydra' => 'http://www.w3.org/ns/hydra/core#',
             'vocab' => $this->vocabUrl . '#'
         );
 
@@ -202,7 +202,7 @@ class HydraApi
         $docu = array(
             '@context' => array(
                 'vocab' => $this->vocabUrl . '#',
-                'hydra' => 'http://purl.org/hydra/core#',
+                'hydra' => 'http://www.w3.org/ns/hydra/core#',
                 'ApiDocumentation' => 'hydra:ApiDocumentation',
                 'property' => 'hydra:property',
                 'readonly' => 'hydra:readonly',
