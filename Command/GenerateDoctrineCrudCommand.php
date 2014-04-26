@@ -46,7 +46,7 @@ The <info>hydra:generate:crud</info> command generates an API controller for a D
 
 The default command only generates the safe GET operations for the collection and the entity.
 
-<info>php app/console hydra:generate:crud:crud --entity=AcmeBlogBundle:Post --route-prefix=/prefix</info>
+<info>php app/console hydra:generate:crud --entity=AcmeBlogBundle:Post --route-prefix=/prefix</info>
 
 Using the --with-write option allows to generate the POST operation for the collection and PUT and DELETE for the entity.
 
