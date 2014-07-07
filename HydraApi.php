@@ -207,9 +207,9 @@ class HydraApi
                 'property' => 'hydra:property',
                 'readonly' => 'hydra:readonly',
                 'writeonly' => 'hydra:writeonly',
-                'supportedClasses' => 'hydra:supportedClasses',
-                'supportedProperties' => 'hydra:supportedProperties',
-                'supportedOperations' => 'hydra:supportedOperations',
+                'supportedClass' => 'hydra:supportedClass',
+                'supportedProperty' => 'hydra:supportedProperty',
+                'supportedOperation' => 'hydra:supportedOperation',
                 'method' => 'hydra:method',
                 'expects' =>  array('@id' => 'hydra:expects', '@type' => '@id'),
                 'returns' =>  array('@id' => 'hydra:returns', '@type' => '@id'),
@@ -224,22 +224,22 @@ class HydraApi
             ),
             '@id' => $this->vocabUrl,
             '@type' => 'ApiDocumentation',
-            'supportedClasses' => array()
+            'supportedClass' => array()
         );
 
         foreach ($metadata as $class) {
             if ($class->isExternalReference()) {
-                $docu['supportedClasses'][] = array(
+                $docu['supportedClass'][] = array(
                     '@id' => $class->getIri()
                 );
             } else {
-                $docu['supportedClasses'][] = array(
+                $docu['supportedClass'][] = array(
                     '@id' => 'vocab:' . $class->getIri(),
                     '@type' => 'hydra:Class',
                     'label' => $class->getTitle(),
                     'description' => $class->getDescription(),
-                    'supportedOperations' => $this->documentOperations($class->getOperations()),
-                    'supportedProperties' => $this->documentClassProperties($class),
+                    'supportedOperation' => $this->documentOperations($class->getOperations()),
+                    'supportedProperty' => $this->documentClassProperties($class),
                 );
             }
 
@@ -315,7 +315,7 @@ class HydraApi
                         'description' => $property->getDescription(),
                         'domain' => $propertyDomain,
                         'range' => $this->getTypeReferenceIri($property->getType()),
-                        'supportedOperations' => $this->documentOperations($property->getOperations())
+                        'supportedOperation' => $this->documentOperations($property->getOperations())
                     ),
                 'required' => $property->getRequired(),
                 'readonly' => $property->isReadOnly(),

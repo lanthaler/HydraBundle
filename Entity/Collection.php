@@ -23,7 +23,7 @@ class Collection
     /**
      * @var array The members of this collection.
      *
-     * @Hydra\Expose(iri="http://www.w3.org/ns/hydra/core#members")
+     * @Hydra\Expose(iri="http://www.w3.org/ns/hydra/core#member")
      */
     private $members;
 
