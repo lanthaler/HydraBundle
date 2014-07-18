@@ -190,6 +190,16 @@ class HydraApi
     }
 
     /**
+     * Get the URL of the Hydra ApiDocumentation
+     *
+     * @return string The URL of the Hydra ApiDocumentation
+     */
+    public function getDocumentationUrl()
+    {
+        return $this->vocabUrl;
+    }
+
+    /**
      * Get the Hydra ApiDocumentation
      *
      * @return array The Hydra ApiDocumentation in the form of an array

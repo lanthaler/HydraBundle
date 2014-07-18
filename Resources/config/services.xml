@@ -9,6 +9,7 @@
         <parameter key="hydra.documentation_generator.class">ML\HydraBundle\DocumentationGenerator</parameter>
         <parameter key="hydra.serializer.class">ML\HydraBundle\Serializer\Serializer</parameter>
         <parameter key="hydra.view.listener.class">ML\HydraBundle\EventListener\SerializerListener</parameter>
+        <parameter key="hydra.response.listener.class">ML\HydraBundle\EventListener\ResponseListener</parameter>
 
         <parameter key="hydra.metadata_factory.class">ML\HydraBundle\Mapping\ClassMetadataFactory</parameter>
 
@@ -73,6 +74,11 @@
             <argument type="service" id="hydra.metadata.annotation_reader" />
             <tag name="kernel.event_listener" event="kernel.controller" method="onKernelController" />
             <tag name="kernel.event_listener" event="kernel.view" method="onKernelView" />
+        </service>
+
+        <service id="hydra.response.listener" class="%hydra.response.listener.class%">
+            <argument type="service" id="hydra.api" />
+            <tag name="kernel.event_listener" event="kernel.response" method="onKernelResponse" />
         </service>
 
         <!-- Core datatype normalizers -->
