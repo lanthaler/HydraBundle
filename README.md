@@ -28,15 +28,14 @@ Installation
 
 You can install this bundle by running
 
-    composer require ml/hydra-bundle
+    composer require ml/hydra-bundle dev-master
 
 or by adding the package to your composer.json file directly
 
 ```json
 {
-    "minimum-stability": "dev",
     "require": {
-        "ml/hydra-bundle": "@dev"
+        "ml/hydra-bundle": "dev-master"
     }
 }
 ```
