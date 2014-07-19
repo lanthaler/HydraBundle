@@ -21,7 +21,7 @@ class JsonLdResponse extends Response
     /**
      * @var boolean Include whitespaces to improve readability?
      */
-    private static $pretty = false;
+    private static $pretty = true;
 
     /**
      * Pretty-print responses?
