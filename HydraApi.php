@@ -231,6 +231,7 @@ class HydraApi
                 'description' => 'rdfs:comment',
                 'domain' => array('@id' => 'rdfs:domain', '@type' => '@id'),
                 'range' =>  array('@id' => 'rdfs:range', '@type' => '@id'),
+                'subClassOf' =>  array('@id' => 'rdfs:subClassOf', '@type' => '@id'),
             ),
             '@id' => $this->vocabUrl,
             '@type' => 'ApiDocumentation',
@@ -248,9 +249,24 @@ class HydraApi
                     'supportedProperty' => $this->documentClassProperties($class),
                 );
             } else {
+                if (false !== ($superclass = get_parent_class($class->getName()))) {
+                    try {
+                        $superclass = $this->metadata->getMetadataFor($superclass);
+
+                        $superclass = $superclass->isExternalReference()
+                            ? $superclass->getIri()
+                            : 'vocab:' . $superclass->getIri();
+                    } catch (\Exception $e) {
+                        $superclass = null;
+                    }
+                } else {
+                    $superclass = null;
+                }
+
                 $docu['supportedClass'][] = array(
                     '@id' => 'vocab:' . $class->getIri(),
                     '@type' => 'hydra:Class',
+                    'subClassOf' => $superclass,
                     'label' => $class->getTitle(),
                     'description' => $class->getDescription(),
                     'supportedOperation' => $this->documentOperations($class->getOperations()),
