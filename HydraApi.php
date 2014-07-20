@@ -240,7 +240,12 @@ class HydraApi
         foreach ($metadata as $class) {
             if ($class->isExternalReference()) {
                 $docu['supportedClass'][] = array(
-                    '@id' => $class->getIri()
+                    '@id' => $class->getIri(),
+                    '@type' => 'hydra:Class',
+                    'hydra:title' => $class->getTitle(),
+                    'hydra:description' => $class->getDescription(),
+                    'supportedOperation' => $this->documentOperations($class->getOperations()),
+                    'supportedProperty' => $this->documentClassProperties($class),
                 );
             } else {
                 $docu['supportedClass'][] = array(
@@ -327,6 +332,8 @@ class HydraApi
                         'range' => $this->getTypeReferenceIri($property->getType()),
                         'supportedOperation' => $this->documentOperations($property->getOperations())
                     ),
+                'hydra:title' => $property->getTitle(),
+                'hydra:description' => $property->getDescription(),
                 'required' => $property->getRequired(),
                 'readonly' => $property->isReadOnly(),
                 'writeonly' => $property->isWriteOnly()
