@@ -334,6 +334,10 @@ class HydraApi
         $propertyDomain = $this->getTypeReferenceIri($class->getName());
 
         foreach ($class->getProperties() as $property) {
+            if (0 === strncmp('@', $property->getExposeAs(), 1)) {
+                continue;  // ignore properties that are mapped to keywords
+            }
+
             $result[] = array(
                 'property' => ($property->isExternalReference())
                     ? $property->getIri()
