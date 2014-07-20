@@ -302,7 +302,7 @@ class Serializer implements SerializerInterface
                 $value = $value->getValue();
             }
 
-            if ($this->hydraApi->hasNormalizer($property->getType())) {
+            if (!is_null($value) && $this->hydraApi->hasNormalizer($property->getType())) {
                 $normalizer = $this->hydraApi->getNormalizer($property->getType());
                 $value = $normalizer->denormalize($value, $property->getType());
             }
