@@ -214,7 +214,7 @@ class HydraApi
                 'vocab' => $this->vocabUrl . '#',
                 'hydra' => 'http://www.w3.org/ns/hydra/core#',
                 'ApiDocumentation' => 'hydra:ApiDocumentation',
-                'property' => 'hydra:property',
+                'property' => array('@id' => 'hydra:property', '@type' => '@id'),
                 'readonly' => 'hydra:readonly',
                 'writeonly' => 'hydra:writeonly',
                 'supportedClass' => 'hydra:supportedClass',
