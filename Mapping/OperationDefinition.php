@@ -27,6 +27,11 @@ class OperationDefinition
     private $iri;
 
     /**
+     * @var string The IRI identifying the type of this operation
+     */
+    private $type;
+
+    /**
      * @var string The title of the description of this operation
      */
     private $title;
@@ -114,6 +119,30 @@ class OperationDefinition
     public function isExternalReference()
     {
         return strpos($this->iri, ':') !== false;
+    }
+
+    /**
+     * Sets the IRI identifying the type of this operation
+     *
+     * @return string The IRI identifying the type of this operation.
+     *
+     * @return OperationDefinition $this
+     */
+    public function setType($type)
+    {
+        $this->type = $type;
+
+        return $this;
+    }
+
+    /**
+     * Gets the IRI identifying the type of this operation
+     *
+     * @return string The IRI identifying the type of this operation.
+     */
+    public function getType()
+    {
+        return $this->type;
     }
 
     /**

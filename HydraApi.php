@@ -305,6 +305,7 @@ class HydraApi
 
             $result[] = array(
                 '@id' => '_:' . $operation->getName(),
+                '@type' => $operation->getType() ?: 'hydra:Operation',
                 'method' => $operation->getMethod(),
                 'label' => ($operation->getTitle())
                     ?

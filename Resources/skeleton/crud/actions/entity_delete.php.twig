@@ -7,7 +7,9 @@
      * @Method("DELETE")
 {% endif %}
      *
-     * @Hydra\Operation()
+     * @Hydra\Operation(
+     *   type = "http://schema.org/DeleteAction"
+     * )
      *
      * @return void
      */

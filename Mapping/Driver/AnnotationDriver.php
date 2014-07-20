@@ -329,6 +329,7 @@ class AnnotationDriver implements MappingDriver
 
         $operation = new OperationDefinition($routeName);
         $operation->setIri($annotation->getIri());
+        $operation->setType($annotation->type);
 
         $operation->setRoute($route);
 

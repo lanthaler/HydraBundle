@@ -8,6 +8,7 @@
 {% endif %}
      *
      * @Hydra\Operation(
+     *   type = "http://schema.org/UpdateAction"
      *   expect = "{{ namespace }}\Entity\{{ entity }}",
      *   status_codes = {
      *     "404" = "If the {{ entity }} entity wasn't found."
