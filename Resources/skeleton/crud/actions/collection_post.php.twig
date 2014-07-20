@@ -33,7 +33,7 @@
         $response = new JsonLdResponse(
             $this->serialize($entity),
             201,
-            array('Content-Location' => $iri)
+            array('Location' => $iri, 'Content-Location' => $iri)
         );
 
         return $response;
