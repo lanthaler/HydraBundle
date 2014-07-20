@@ -302,6 +302,11 @@ class Serializer implements SerializerInterface
                 $value = $value->getValue();
             }
 
+            if ($this->hydraApi->hasNormalizer($property->getType())) {
+                $normalizer = $this->hydraApi->getNormalizer($property->getType());
+                $value = $normalizer->denormalize($value, $property->getType());
+            }
+
             $property->setValue($entity, $value);  // TODO Fix IRI construction
 
             // if (is_array($value) || ($value instanceof \ArrayAccess) || ($value instanceof \Travesable)) {
