@@ -44,6 +44,11 @@ class ResponseListener
     {
         $response = $event->getResponse();
 
+        $response->headers->set('Access-Control-Allow-Origin', '*');
+        $response->headers->set('Access-Control-Allow-Credentials', 'true');
+        $response->headers->set('Access-Control-Expose-Headers', 'Link');
+        $response->headers->set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
+
         $response->headers->set(
             'Link',
             '<' . $this->hydra->getDocumentationUrl() . '>; rel="http://www.w3.org/ns/hydra/core#apiDocumentation"'
