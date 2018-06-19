@@ -37,20 +37,6 @@ class DocumentationGeneratorController extends Controller
     /**
      * Generates the service documentation
      *
-     * @Route("/api-documentation/vardump")
-     * @Template()
-     */
-    public function vardumpAction()
-    {
-        $documentation = $this->get('hydra.api')->getDocumentation();
-
-        ini_set('xdebug.var_display_max_depth', '10');
-        die(var_dump($documentation));
-    }
-
-    /**
-     * Generates the service documentation
-     *
      * @Route("/vocab", defaults = { "_format" = "jsonld" }, name="hydra_vocab")
      * @Template()
      */
